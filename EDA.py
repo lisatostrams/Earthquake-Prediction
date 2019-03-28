@@ -8,10 +8,42 @@ Created on Thu Mar 21 09:27:33 2019
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
-train = pd.read_csv("Data/train.csv",
-                    dtype={'acoustic_data': np.int16, 'time_to_failure': np.float16})
 
+reader = pd.read_csv("Data/train.csv",
+                    dtype={'acoustic_data': np.int16, 'time_to_failure': np.float16},
+                    chunksize=10000)
+
+summary= 'meanAudio meanTime stdAudio stdTime maxAudio maxTime minAudio minTime q75Audio q25Audio n'.split()
+summarized_data = np.zeros((62915,len(summary)))
+i = 0
+start_time = time.time()
+for df in reader:
+    mean = df.mean()
+    std = df.std()
+    maxi = df.max()
+    mini = df.min()
+    q75 = df.quantile(.75)
+    q25 = df.quantile(.25)
+    summarized_data[i,0] = mean[0]
+    summarized_data[i,1] = mean[1]
+    summarized_data[i,2] = std[0]
+    summarized_data[i,3] = std[1]
+    summarized_data[i,4] = maxi[0]
+    summarized_data[i,5] = maxi[1]
+    summarized_data[i,6] = mini[0]
+    summarized_data[i,7] = mini[1]
+    summarized_data[i,8] = q75[0]
+    summarized_data[i,9] = q25[0]
+    summarized_data[i,10] = len(df)
+    i=i+1
+    if(i%10000==0):
+        print(i)
+    
+summarized_data = pd.DataFrame(summarized_data,columns=summary)
+summarized_data.to_csv('summarized_data_10000.csv')
+print('This took {:.2f} seconds to process'.format(start_time - time.time()))
 #train_acoustic_data_small = train['acoustic_data'].values[::50]
 #train_time_to_failure_small = train['time_to_failure'].values[::50]
 #
@@ -30,9 +62,7 @@ train = pd.read_csv("Data/train.csv",
 #del train_time_to_failure_small
 
 #%%
-time_0 = train['time_to_failure'].min()
-events = (train['time_to_failure']==time_0).astype(int)
-n_events = sum(events.diff())
+
 #%%
 
     
