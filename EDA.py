@@ -34,13 +34,13 @@ for df in reader:
     summarized_data[i,5] = mini[1]
     summarized_data[i,6] = q75[0]
     summarized_data[i,7] = q25[0]
-    summarized_data[i,8] = mini[1]< 8e-4
+
     summarized_data[i,9] = len(df)
     i=i+1
     if(i%10000==0):
         print(i)
-    
 summarized_data = pd.DataFrame(summarized_data,columns=summary)
+summarized_data['event'] = (summarized_data['minTime'].diff()>2).astype(int)
 summarized_data.to_csv('summarized_data_10000.csv')
 print('This took {:.2f} seconds to process'.format(time.time() - start_time))
 #train_acoustic_data_small = train['acoustic_data'].values[::50]
