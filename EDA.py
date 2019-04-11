@@ -37,11 +37,11 @@ for df in reader:
 
     summarized_data[i,9] = len(df)
     i=i+1
-    if(i%10000==0):
+    if(i%5000==0):
         print(i)
 summarized_data = pd.DataFrame(summarized_data,columns=summary)
 summarized_data['event'] = (summarized_data['minTime'].diff()>2).astype(int)
-summarized_data.to_csv('summarized_data_10000.csv')
+#summarized_data.to_csv('summarized_data_10000.csv')
 print('This took {:.2f} seconds to process'.format(time.time() - start_time))
 #train_acoustic_data_small = train['acoustic_data'].values[::50]
 #train_time_to_failure_small = train['time_to_failure'].values[::50]
