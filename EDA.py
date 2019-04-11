@@ -12,11 +12,11 @@ import time
 
 
 reader = pd.read_csv("Data/train.csv",
-                    dtype={'acoustic_data': np.int16, 'time_to_failure': np.float16},
-                    chunksize=10000,iterator=True)
+                    dtype={'acoustic_data': np.int16, 'time_to_failure': np.float32},
+                    chunksize=150000)
 
 summary= 'meanAudio stdAudio maxAudio maxTime minAudio minTime q75Audio q25Audio event n'.split()
-summarized_data = np.zeros((62915,len(summary)))
+summarized_data = np.zeros((4195,len(summary)))
 i = 0
 start_time = time.time()
 for df in reader:
@@ -37,12 +37,13 @@ for df in reader:
 
     summarized_data[i,9] = len(df)
     i=i+1
-    if(i%5000==0):
+    if(i%500==0):
         print(i)
 summarized_data = pd.DataFrame(summarized_data,columns=summary)
+min0 = summarized_data['minTime'].min()
 summarized_data['event'] = (summarized_data['minTime'].diff()>2).astype(int)
 events = summarized_data.index[summarized_data['event'] == 1]
-#summarized_data.to_csv('summarized_data_10000.csv')
+summarized_data.to_csv('summarized_data_150000.csv')
 print('This took {:.2f} seconds to process'.format(time.time() - start_time))
 #train_acoustic_data_small = train['acoustic_data'].values[::50]
 #train_time_to_failure_small = train['time_to_failure'].values[::50]
@@ -64,7 +65,9 @@ print('This took {:.2f} seconds to process'.format(time.time() - start_time))
 #%%
 
 #%%
-
+reader = pd.read_csv("Data/train.csv",
+                    dtype={'acoustic_data': np.int16, 'time_to_failure': np.float32},
+                    chunksize=150000)
 events_df = []
 i = 0
 for df in reader:
@@ -72,11 +75,26 @@ for df in reader:
         print(i)
         events_df.append(df)
     i=i+1
+    if(i%500==0):
+        print(i)
     
 #%%
 i = 0
 for df in events_df:
     df.to_csv('event_{}.csv'.format(i))
     i=i+1
+
+#%%
+    
+fig, ax = plt.subplots(4,4,figsize=(24,18))
+i=0
+for k in range(0,4):
+    for j in range(0,4):
+        #events_df[i]['acoustic_data'].plot(ax=ax[k,j])
+        ax2 = ax[k,j].twinx()
+        events_df[i]['time_to_failure'].plot(color='orange',ax=ax2)
+        i=i+1
+        
+
         
     
