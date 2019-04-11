@@ -70,7 +70,13 @@ i = 0
 for df in reader:
     if(i in events):
         print(i)
-        events.append((i,mint,df))
+        events_df.append(df)
+    i=i+1
+    
+#%%
+i = 0
+for df in events_df:
+    df.to_csv('event_{}.csv'.format(i))
     i=i+1
         
     

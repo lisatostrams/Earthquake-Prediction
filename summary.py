@@ -22,11 +22,11 @@ i=0
 for s in summary:
     
     chunks_other[s].hist(color='g',ax = ax[i,0],bins=100)
-    chunks_event[s].hist(color='r',ax= ax[i,1],bins=1)
+    chunks_event[s].hist(color='r',ax= ax[i,1],bins=16)
     ax[i,0].set_ylabel(s,fontsize=26)
     i=i+1
     
 ax[0,0].set_title('Histogram non events (100 bins)',fontsize=18)
-ax[0,1].set_title('Histogram events (100 bins)',fontsize=18)
+ax[0,1].set_title('Histogram events (16 bins)',fontsize=18)
 plt.tight_layout()
-plt.savefig('summary.png',dpi=300)
+plt.savefig('summary2.png',dpi=300)
