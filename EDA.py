@@ -16,7 +16,7 @@ reader = pd.read_csv("Data/train.csv",
                     chunksize=1000000)
 
 summary= 'meanAudio stdAudio maxAudio maxTime minAudio minTime q75Audio q25Audio event n'.split()
-summarized_data = np.zeros((4195,len(summary)))
+summarized_data = np.zeros((630,len(summary)))
 i = 0
 start_time = time.time()
 for df in reader:
@@ -43,7 +43,7 @@ summarized_data = pd.DataFrame(summarized_data,columns=summary)
 min0 = summarized_data['minTime'].min()
 summarized_data['event'] = (summarized_data['minTime'].diff()>2).astype(int)
 events = summarized_data.index[summarized_data['event'] == 1]
-summarized_data.to_csv('summarized_data_150000.csv',index=False)
+summarized_data.to_csv('summarized_data_1000000.csv',index=False)
 print('This took {:.2f} seconds to process'.format(time.time() - start_time))
 #train_acoustic_data_small = train['acoustic_data'].values[::50]
 #train_time_to_failure_small = train['time_to_failure'].values[::50]
@@ -67,7 +67,7 @@ print('This took {:.2f} seconds to process'.format(time.time() - start_time))
 #%%
 reader = pd.read_csv("Data/train.csv",
                     dtype={'acoustic_data': np.int16, 'time_to_failure': np.float32},
-                    chunksize=150000)
+                    chunksize=1000000)
 events_df = []
 i = 0
 for df in reader:
