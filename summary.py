@@ -19,7 +19,7 @@ bad_df = chunks.index.isin(events)
 chunks_other = chunks[~bad_df]
 #%%
 plt.style.use('ggplot')
-summary= 'meanAudio stdAudio maxAudio minAudio q75Audio q25Audio'.split()
+summary= 'meanAudio medianAudio modeAudio stdAudio maxAudio minAudio q75Audio q25Audio'.split()
 fig, ax = plt.subplots(len(summary),1,figsize=(8,20))
 i=0
 for s in summary:
@@ -28,7 +28,7 @@ for s in summary:
 
     ax2 = ax[i].twinx()
 
-    chunks_event[s].hist(color='r',ax= ax2,bins=16,grid=False)
+    chunks_event[s].hist(color='r',ax= ax2,bins=16,alpha=.7,grid=False)
     ax[i].set_ylabel(s,fontsize=26)
     i=i+1
 

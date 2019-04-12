@@ -19,7 +19,7 @@ Created on Fri Apr 12 12:20:11 2019
 
 @author: Lisa
 """
-
+summary= 'meanAudio medianAudio modeAudio stdAudio maxAudio minAudio q75Audio q25Audio'.split()
 X = chunks[summary]
 y = chunks['minTime']
 
@@ -40,6 +40,12 @@ y_est[y_est<0] = 0
 import sklearn.metrics as metric
 print('r2 Score linear regression: {:.4f}'.format(metric.mean_squared_error(ytest,y_est)))
 #%%
+
+
+X = chunks[summary]
+y = chunks['minTime']
+y_est = rfr_model.predict(X)
+y_est[y_est<0] = 0
 
 plt.style.use('ggplot')
 fig, ax = plt.subplots(len(summary),1,figsize=(16,20))

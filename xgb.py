@@ -11,12 +11,12 @@ Created on Fri Apr 12 12:20:11 2019
 
 @author: Lisa
 """
-
+summary= 'meanAudio medianAudio modeAudio stdAudio maxAudio minAudio q75Audio q25Audio'.split()
 X = chunks[summary]
 y = chunks['minTime']
 
 
-X,Xtest,y,ytest = model_selection.train_test_split(X,y,test_size=0.25)
+X,Xtest,y,ytest = model_selection.train_test_split(X,y,test_size=0.5)
 
 #%%
 import xgboost as xgb
@@ -47,7 +47,7 @@ for s in summary:
     ax[i].grid(False)
     ax[i].tick_params(axis='y',labelleft=False,left=False)
     #ax[i,0].set_ylim([0.1,1])
-    chunks[s].plot(ax = ax2,alpha=1)
+    chunks[s].plot(ax = ax2,alpha=.95)
     ax2.set_ylabel('Time to failure',color=list(plt.rcParams['axes.prop_cycle'])[1]['color'])
     ax3 = ax[i].twinx()
     ax3.plot(y_est,color='g',alpha=0.8)
