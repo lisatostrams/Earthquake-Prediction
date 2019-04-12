@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
 """
+Created on Fri Apr 12 13:46:52 2019
+
+@author: Lisa
+"""
+
+ 
+# -*- coding: utf-8 -*-
+"""
 Created on Fri Apr 12 13:31:12 2019
 
 @author: Lisa
@@ -15,18 +23,22 @@ Created on Fri Apr 12 12:20:11 2019
 X = chunks[summary]
 y = chunks['minTime']
 
+import sklearn.model_selection as model_selection
+
+X,Xtest,y,ytest = model_selection.train_test_split(X,y,test_size=0.5)
+
 #%%
-import xgboost as xgb
+from sklearn.ensemble import RandomForestRegressor
 
-xgb_model = xgb.XGBRegressor(objective="reg:linear")
+rfr_model = RandomForestRegressor(n_estimators=200)
 
-xgb_model = xgb_model.fit(X, y)
+rfr_model = rfr_model.fit(X, y)
 
 
-y_est = xgb_model.predict(X)
+y_est = rfr_model.predict(Xtest)
 y_est[y_est<0] = 0
 import sklearn.metrics as metric
-print('r2 Score linear regression: {:.4f}'.format(metric.mean_squared_error(y,y_est)))
+print('r2 Score linear regression: {:.4f}'.format(metric.mean_squared_error(ytest,y_est)))
 #%%
 
 plt.style.use('ggplot')
@@ -47,7 +59,7 @@ for s in summary:
     ax[i].set_ylabel(s,fontsize=26)
     i=i+1
     
-plt.savefig('xgb_prediction.png',dpi=300)
+plt.savefig('rfr_prediction.png',dpi=300)
 
 
 #%%
@@ -71,10 +83,10 @@ for file in submission['seg_id']:
     summary_test[0,4] = q75[0]
     summary_test[0,5] = q25[0]
     summarized_data = pd.DataFrame(summary_test,columns=summary)
-    y_est = xgb_model.predict(summarized_data)
+    y_est = rfr.predict(summarized_data)
     y_est[y_est<0] = 0
     submission.loc[submission['seg_id']==file,'time_to_failure'] = y_est[0]
     
 #%%
     
-submission.to_csv('submissionxgb.csv',index=False)
+submission.to_csv('submissionrfr.csv',index=False)

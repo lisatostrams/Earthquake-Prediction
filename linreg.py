@@ -8,6 +8,9 @@ Created on Fri Apr 12 12:20:11 2019
 X = chunks[summary]
 y = chunks['minTime']
 
+X,Xtest,y,ytest = model_selection.train_test_split(X,y,test_size=0.5)
+
+
 #%%
 from sklearn.linear_model import LinearRegression
 
@@ -15,10 +18,10 @@ reg = LinearRegression().fit(X, y)
 
 reg.score(X, y)
 
-y_est = reg.predict(X)
+y_est = reg.predict(Xtest)
 y_est[y_est<0] = 0
 import sklearn.metrics as metric
-print('r2 Score linear regression: {:.4f}'.format(metric.r2_score(y,y_est)))
+print('r2 Score linear regression: {:.4f}'.format(metric.mean_squared_error(ytest,y_est)))
 #%%
 
 plt.style.use('ggplot')
@@ -69,4 +72,4 @@ for file in submission['seg_id']:
     
 #%%
     
-submission.to_csv('submission.csv',index=False)
+submission.to_csv('submissionlinreg.csv',index=False)
