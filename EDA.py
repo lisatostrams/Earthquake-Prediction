@@ -13,7 +13,7 @@ import time
 
 reader = pd.read_csv("Data/train.csv",
                     dtype={'acoustic_data': np.int16, 'time_to_failure': np.float32},
-                    chunksize=150000)
+                    chunksize=1000000)
 
 summary= 'meanAudio stdAudio maxAudio maxTime minAudio minTime q75Audio q25Audio event n'.split()
 summarized_data = np.zeros((4195,len(summary)))
@@ -43,7 +43,7 @@ summarized_data = pd.DataFrame(summarized_data,columns=summary)
 min0 = summarized_data['minTime'].min()
 summarized_data['event'] = (summarized_data['minTime'].diff()>2).astype(int)
 events = summarized_data.index[summarized_data['event'] == 1]
-summarized_data.to_csv('summarized_data_150000.csv')
+summarized_data.to_csv('summarized_data_150000.csv',index=False)
 print('This took {:.2f} seconds to process'.format(time.time() - start_time))
 #train_acoustic_data_small = train['acoustic_data'].values[::50]
 #train_time_to_failure_small = train['time_to_failure'].values[::50]
@@ -71,7 +71,7 @@ reader = pd.read_csv("Data/train.csv",
 events_df = []
 i = 0
 for df in reader:
-    if(i in events):
+    if(i+1 in events):
         print(i)
         events_df.append(df)
     i=i+1
@@ -90,11 +90,11 @@ fig, ax = plt.subplots(4,4,figsize=(24,18))
 i=0
 for k in range(0,4):
     for j in range(0,4):
-        #events_df[i]['acoustic_data'].plot(ax=ax[k,j])
         ax2 = ax[k,j].twinx()
-        events_df[i]['time_to_failure'].plot(color='orange',ax=ax2)
+        events_df[i]['time_to_failure'].plot(color='orange',ax=ax2,alpha=0.7)
+        events_df[i]['acoustic_data'].plot(ax=ax[k,j])        
         i=i+1
         
-
+plt.savefig('events.png',dpi=300)
         
     
