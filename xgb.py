@@ -15,6 +15,9 @@ Created on Fri Apr 12 12:20:11 2019
 X = chunks[summary]
 y = chunks['minTime']
 
+
+X,Xtest,y,ytest = model_selection.train_test_split(X,y,test_size=0.25)
+
 #%%
 import xgboost as xgb
 
@@ -23,11 +26,17 @@ xgb_model = xgb.XGBRegressor(objective="reg:linear")
 xgb_model = xgb_model.fit(X, y)
 
 
-y_est = xgb_model.predict(X)
+y_est = xgb_model.predict(Xtest)
 y_est[y_est<0] = 0
 import sklearn.metrics as metric
-print('r2 Score linear regression: {:.4f}'.format(metric.mean_squared_error(y,y_est)))
+print('r2 Score linear regression: {:.4f}'.format(metric.mean_squared_error(ytest,y_est)))
 #%%
+
+
+X = chunks[summary]
+y = chunks['minTime']
+y_est = xgb_model.predict(X)
+y_est[y_est<0] = 0
 
 plt.style.use('ggplot')
 fig, ax = plt.subplots(len(summary),1,figsize=(16,20))
