@@ -15,7 +15,7 @@ reader = pd.read_csv("Data/train.csv",
                     dtype={'acoustic_data': np.int16, 'time_to_failure': np.float32},
                     chunksize=150000)
 
-summary= 'meanAudio medianAudio modeAudio stdAudio maxAudio maxTime minAudio minTime q75Audio q25Audio event n'.split()
+summary= 'meanAudio medianAudio modeAudio stdAudio maxAudio maxTime minAudio endTime minTime q75Audio q25Audio event n'.split()
 summarized_data = np.zeros((4195,len(summary)))
 i = 0
 start_time = time.time()
@@ -23,7 +23,7 @@ for df in reader:
     mean = df.mean()
     median = df.median()
     mode = df['acoustic_data'].mode()
-    std = df.std()
+    std = df.std()  ## TODO: 3,5,10 chunk gemiddeldes
     maxi = df.max()
     mini = df.min()
     q75 = df.quantile(.75)
@@ -35,9 +35,10 @@ for df in reader:
     summarized_data[i,4] = maxi[0]
     summarized_data[i,5] = maxi[1]
     summarized_data[i,6] = mini[0]
-    summarized_data[i,7] = mini[1]
-    summarized_data[i,8] = q75[0]
-    summarized_data[i,9] = q25[0]
+    summarized_data[i,7] = df.iloc[-1]['time_to_failure']
+    summarized_data[i,8] = mini[1]
+    summarized_data[i,9] = q75[0]
+    summarized_data[i,10] = q25[0]
 
     summarized_data[i,10] = len(df)
     i=i+1

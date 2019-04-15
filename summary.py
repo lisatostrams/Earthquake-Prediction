@@ -19,8 +19,8 @@ bad_df = chunks.index.isin(events)
 chunks_other = chunks[~bad_df]
 #%%
 plt.style.use('ggplot')
-summary= 'meanAudio medianAudio modeAudio stdAudio maxAudio minAudio q75Audio q25Audio'.split()
-fig, ax = plt.subplots(len(summary),1,figsize=(8,20))
+summary= 'meanAudio medianAudio modeAudio stdAudio maxAudio minAudio endTime q75Audio q25Audio'.split()
+fig, ax = plt.subplots(len(summary),1,figsize=(8,24))
 i=0
 for s in summary:
     
@@ -41,7 +41,7 @@ bad_df = chunks.index.isin(list(events) + (list(events-1)))
 chunks_other = chunks[~bad_df]
 #%%
 plt.style.use('ggplot')
-summary= 'meanAudio stdAudio maxAudio minAudio q75Audio q25Audio'.split()
+summary= 'meanAudio stdAudio maxAudio minAudio endTime q75Audio q25Audio'.split()
 fig, ax = plt.subplots(len(summary),1,figsize=(8,20))
 i=0
 for s in summary:

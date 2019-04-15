@@ -6,7 +6,7 @@ Created on Fri Apr 12 12:20:11 2019
 """
 summary= 'meanAudio medianAudio modeAudio stdAudio maxAudio minAudio q75Audio q25Audio'.split()
 X = chunks[summary]
-y = chunks['minTime']
+y = chunks['endTime']
 
 X,Xtest,y,ytest = model_selection.train_test_split(X,y,test_size=0.5)
 
@@ -40,8 +40,10 @@ for s in summary:
     #ax[i,0].set_ylim([0.1,1])
     chunks[s].plot(ax = ax2,alpha=.95)
     ax2.set_ylabel('Time to failure',color=list(plt.rcParams['axes.prop_cycle'])[1]['color'])
+    lim = ax[i].get_ylim()
     ax3 = ax[i].twinx()
     ax3.plot(y_est,color='g',alpha=0.6)
+    ax3.set_ylim(lim)
     ax3.tick_params(axis='y',labelleft=False,left=False)
     ax3.grid(False)
     ax[i].set_ylabel(s,fontsize=26)
@@ -60,18 +62,21 @@ for file in submission['seg_id']:
     test = pd.read_csv('Test/{}.csv'.format(file))
     summary_test = np.zeros((1,len(summary)))
     mean = test.mean()
+    median = test.median()
+    mode = test['acoustic_data'].mode()
     std = test.std()
     maxi = test.max()
     mini = test.min()
     q75 = test.quantile(.75)
     q25 = test.quantile(.25)
     summary_test[0,0] = mean[0]
-    summary_test[0,1] = std[0]
-    summary_test[0,2] = maxi[0]
-    summary_test[0,3] = mini[0]
-    summary_test[0,4] = q75[0]
-    summary_test[0,5] = q25[0]
-    summarized_data = pd.DataFrame(summary_test,columns=summary)
+    summary_test[0,1] = median[0]
+    summary_test[0,2] = mode[0]
+    summary_test[0,3] = std[0]
+    summary_test[0,4] = maxi[0]
+    summary_test[0,5] = mini[0]
+    summary_test[0,6] = q75[0]
+    summary_test[0,7] = q25[0]    summarized_data = pd.DataFrame(summary_test,columns=summary)
     y_est = reg.predict(summarized_data)
     y_est[y_est<0] = 0
     submission.loc[submission['seg_id']==file,'time_to_failure'] = y_est[0]
