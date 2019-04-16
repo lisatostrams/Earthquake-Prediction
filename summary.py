@@ -19,8 +19,8 @@ bad_df = chunks.index.isin(events)
 chunks_other = chunks[~bad_df]
 #%%
 plt.style.use('ggplot')
-summary= 'meanAudio medianAudio modeAudio stdAudio maxAudio minAudio endTime q75Audio q25Audio'.split()
-fig, ax = plt.subplots(len(summary),1,figsize=(8,24))
+summary= 'meanAudio medianAudio modeAudio stdAudio stdAudioIncrease maxAudio minAudio q75Audio q25Audio'.split()
+fig, ax = plt.subplots(len(summary),1,figsize=(8,30))
 i=0
 for s in summary:
     
@@ -30,10 +30,11 @@ for s in summary:
 
     chunks_event[s].hist(color='r',ax= ax2,bins=16,alpha=.7,grid=False)
     ax[i].set_ylabel(s,fontsize=26)
+    ax[i].set_title('Correlation with endTime: {:.4f}'.format(chunks[s].corr(chunks['endTime'])))
     i=i+1
 
 plt.tight_layout()
-plt.savefig('summary2.png',dpi=300)
+plt.savefig('summary.png',dpi=300)
 
 #%%
 chunks_before_event = chunks.iloc[events-1]
@@ -41,8 +42,8 @@ bad_df = chunks.index.isin(list(events) + (list(events-1)))
 chunks_other = chunks[~bad_df]
 #%%
 plt.style.use('ggplot')
-summary= 'meanAudio stdAudio maxAudio minAudio endTime q75Audio q25Audio'.split()
-fig, ax = plt.subplots(len(summary),1,figsize=(8,20))
+summary= 'meanAudio medianAudio modeAudio stdAudio stdAudioIncrease maxAudio minAudio endTime q75Audio q25Audio'.split()
+fig, ax = plt.subplots(len(summary),1,figsize=(8,30))
 i=0
 for s in summary:
     

@@ -11,7 +11,7 @@ Created on Fri Apr 12 12:20:11 2019
 
 @author: Lisa
 """
-summary= 'meanAudio medianAudio modeAudio stdAudio maxAudio minAudio q75Audio q25Audio'.split()
+summary= 'meanAudio medianAudio modeAudio stdAudio stdAudioIncrease maxAudio minAudio q75Audio q25Audio'.split()
 X = chunks[summary]
 y = chunks['minTime']
 
@@ -21,7 +21,7 @@ X,Xtest,y,ytest = model_selection.train_test_split(X,y,test_size=0.5)
 #%%
 import xgboost as xgb
 
-xgb_model = xgb.XGBRegressor(objective="reg:linear")
+xgb_model = xgb.XGBRegressor(objective="reg:linear",max_depth=2)
 
 xgb_model = xgb_model.fit(X, y.values)
 
@@ -39,8 +39,9 @@ y_est = xgb_model.predict(X)
 y_est[y_est<0] = 0
 
 plt.style.use('ggplot')
-fig, ax = plt.subplots(len(summary),1,figsize=(16,20))
+fig, ax = plt.subplots(len(summary),1,figsize=(16,24))
 i=0
+coeff = xgb_model.feature_importances_
 for s in summary:
     ax2 = ax[i].twinx()
     chunks['minTime'].plot(color=list(plt.rcParams['axes.prop_cycle'])[1]['color'],alpha=0.8,ax=ax[i])
@@ -55,6 +56,7 @@ for s in summary:
     ax3.set_ylim(lim)
     ax3.tick_params(axis='y',labelleft=False,left=False)
     ax3.grid(False)
+    ax[i].set_title('xgb feature importance: {:.4f}'.format(coeff[i]))
     ax[i].set_ylabel(s,fontsize=26)
     i=i+1
     
@@ -82,10 +84,11 @@ for file in submission['seg_id']:
     summary_test[0,1] = median[0]
     summary_test[0,2] = mode[0]
     summary_test[0,3] = std[0]
-    summary_test[0,4] = maxi[0]
-    summary_test[0,5] = mini[0]
-    summary_test[0,6] = q75[0]
-    summary_test[0,7] = q25[0]
+    summary_test[0,4] = np.mean((test.rolling(1000).std()< test.rolling(10000).std()))[0]
+    summary_test[0,5] = maxi[0]
+    summary_test[0,6] = mini[0]
+    summary_test[0,7] = q75[0]
+    summary_test[0,8] = q25[0]
     summarized_data = pd.DataFrame(summary_test,columns=summary)
     y_est = xgb_model.predict(summarized_data)
     y_est[y_est<0] = 0

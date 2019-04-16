@@ -4,7 +4,7 @@ Created on Fri Apr 12 12:20:11 2019
 
 @author: Lisa
 """
-summary= 'meanAudio medianAudio modeAudio stdAudio maxAudio minAudio q75Audio q25Audio'.split()
+summary= 'meanAudio medianAudio modeAudio stdAudio stdAudioIncrease maxAudio minAudio q75Audio q25Audio'.split()
 X = chunks[summary]
 y = chunks['endTime']
 
@@ -21,7 +21,7 @@ reg.score(X, y)
 y_est = reg.predict(Xtest)
 y_est[y_est<0] = 0
 import sklearn.metrics as metric
-print('r2 Score linear regression: {:.4f}'.format(metric.mean_squared_error(ytest,y_est)))
+print('mse linear regression: {:.4f}'.format(metric.mean_squared_error(ytest,y_est)))
 #%%
 
 X = chunks[summary]
@@ -30,8 +30,9 @@ y_est = reg.predict(X)
 y_est[y_est<0] = 0
 
 plt.style.use('ggplot')
-fig, ax = plt.subplots(len(summary),1,figsize=(16,20))
+fig, ax = plt.subplots(len(summary),1,figsize=(16,24))
 i=0
+coeff = reg.coef_
 for s in summary:
     ax2 = ax[i].twinx()
     chunks['minTime'].plot(color=list(plt.rcParams['axes.prop_cycle'])[1]['color'],alpha=0.8,ax=ax[i])
@@ -47,6 +48,7 @@ for s in summary:
     ax3.tick_params(axis='y',labelleft=False,left=False)
     ax3.grid(False)
     ax[i].set_ylabel(s,fontsize=26)
+    ax[i].set_title('linreg coefficient: {:.4f}'.format(coeff[i]))
     i=i+1
     
 plt.tight_layout()
@@ -76,7 +78,8 @@ for file in submission['seg_id']:
     summary_test[0,4] = maxi[0]
     summary_test[0,5] = mini[0]
     summary_test[0,6] = q75[0]
-    summary_test[0,7] = q25[0]    summarized_data = pd.DataFrame(summary_test,columns=summary)
+    summary_test[0,7] = q25[0]  
+    summarized_data = pd.DataFrame(summary_test,columns=summary)
     y_est = reg.predict(summarized_data)
     y_est[y_est<0] = 0
     submission.loc[submission['seg_id']==file,'time_to_failure'] = y_est[0]
