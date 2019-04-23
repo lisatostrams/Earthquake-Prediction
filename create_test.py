@@ -4,10 +4,15 @@ Created on Tue Apr 23 14:27:41 2019
 
 @author: Lisa
 """
-
+import warnings
+warnings.filterwarnings("ignore")
 submission = pd.read_csv('Data/sample_submission.csv')
-
+i=0
+Test = pd.DataFrame(index=submission['seg_id'],columns=summary)
 for file in submission['seg_id']:
+    if(i%50==0):
+        print(i)
+    i=i+1
     test = pd.read_csv('Test/{}.csv'.format(file))
     X_tr = pd.DataFrame(index=range(0,1))
     maxi = test.max()
@@ -108,13 +113,12 @@ for file in submission['seg_id']:
         X_tr[ 'q95_roll_mean_' + str(windows)] = np.quantile(x_roll_mean, 0.95)
         X_tr[ 'q99_roll_mean_' + str(windows)] = np.quantile(x_roll_mean, 0.99)
         X_tr[ 'av_change_abs_roll_mean_' + str(windows)] = np.mean(np.diff(x_roll_mean))
-        X_tr[ 'av_change_rate_roll_mean_' + str(windows)] = 0#np.mean(np.nonzero((np.diff(x_roll_mean) / x_roll_mean[:-1]))[0])
+        X_tr[ 'av_change_rate_roll_mean_' + str(windows)] = np.mean(np.nonzero((np.diff(x_roll_mean) / x_roll_mean[:-1]))[0])
         X_tr[ 'abs_max_roll_mean_' + str(windows)] = np.abs(x_roll_mean).max()
     
     
-    X_tr = X_tr[summary]
-    for s in summary:
-        submission.loc[submission['seg_id']==file,s] = X_tr[s]
+    Test.loc[Test.index==file,summary] = X_tr[summary].values
+
     
     
-submission.to_csv('test.csv',index=False)
+Test.to_csv('test.csv')

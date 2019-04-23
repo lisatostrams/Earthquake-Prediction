@@ -60,21 +60,21 @@ attributes = ['q01_roll_std_100', 'min_roll_std_100', 'q01_roll_std_10', 'min_ro
               'trend','q99_roll_std_10','modeAudio','q99_roll_std_1000','medianAudio','max_to_min','abs_q01','q99_roll_std_100']
 
 
-summary= attributes
-X = chunks[summary]
+
+X = chunks[attributes]
 y = chunks['minTime']
 
 
 Xtrain,Xval,ytrain,yval = model_selection.train_test_split(X,y,test_size=0.25)
 
-Xtest = pd.read_csv('test.csv)
-Xtest = Xtest[attributes]
+Test = pd.read_csv('test.csv')
+Xtest = Test[attributes]
 
 
 #%% train all classifiers
         
 classifiers = 'DTC RF LINREG KNN SVM GNB XGB'.split(sep=' ')
-predictions = np.zeros((len(y_test),len(classifiers)))
+predictions = np.zeros((len(yval),len(classifiers)))
 
 dtc = tree.DecisionTreeClassifier(criterion='gini',max_depth=max_depth) #train decision tree
 dtc = dtc.fit(X_train,y_train)
