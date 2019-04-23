@@ -21,12 +21,13 @@ chunks_other = chunks[~bad_df]
 #%%
 corrf = []
 for s in summary:
-    if(not 'time' in s.lower()):
+    if(not 'time' in s.lower() and not 'event' in s.lower()):
         c = chunks[s].corr(chunks['endTime'])
         if(np.isfinite(c)):
             corrf.append((s,c))
 attributes_sorted = sorted(corrf, key=lambda item: abs(item[1]), reverse=True)
 attributes = [s[0] for s in attributes_sorted]
+
 #%%
 plt.style.use('ggplot')
 

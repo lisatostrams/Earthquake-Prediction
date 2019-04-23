@@ -47,76 +47,33 @@ attributes = ['q01_roll_std_100', 'min_roll_std_100', 'q01_roll_std_10', 'min_ro
               'abs_q95', 'ave_roll_std_10', 'stdAudio', 'ave_roll_mean_10', 'ave_roll_std_100', 'ave_roll_std_1000',
               'abs_mean', 'std_roll_std_10', 'av_change_rate_roll_std_10', 'q95_roll_std_100', 'std_roll_std_100',
               'av_change_rate_roll_std_100', 'minAudio', 'max_first_10000', 'maxAudio', 'max_roll_mean_10',
-              'std_roll_mean_10', 'std_first_10000', 'av_change_rate_roll_mean_10',
- 'mean_change_rate',
- 'std_roll_std_1000',
- 'av_change_rate_roll_std_1000',
- 'q95_roll_std_1000',
- 'min_first_50000',
- 'min_first_10000',
- 'min_last_10000',
- 'std_first_50000',
- 'q95_roll_mean_100',
- 'max_roll_mean_100',
- 'q05_roll_mean_100',
- 'std_roll_mean_100',
- 'av_change_rate_roll_mean_100',
- 'avg_last_10000',
- 'min_roll_mean_100',
- 'max_first_50000',
- 'ave_roll_mean_100',
- 'max_last_50000',
- 'std_last_50000',
- 'max_last_10000',
- 'max_roll_std_10',
- 'std_roll_mean_1000',
- 'av_change_rate_roll_mean_1000',
- 'max_roll_mean_1000',
- 'q01_roll_mean_100',
- 'min_last_50000',
- 'mad',
- 'ave_roll_mean_1000',
- 'q95_roll_mean_1000',
- 'max_to_min_diff',
- 'stdAudioIncrease',
- 'event',
- 'min_roll_mean_1000',
- 'q05_roll_mean_1000',
- 'count_big',
- 'abs_max_roll_std_1000',
- 'abs_max_roll_std_10',
- 'abs_max_roll_std_100',
- 'meanAudio',
- 'avg_last_50000',
- 'avg_first_50000',
- 'std_last_10000',
- 'q99_roll_mean_10',
- 'av_change_abs_roll_mean_1000',
- 'av_change_abs_roll_std_1000',
- 'av_change_abs_roll_mean_100',
- 'av_change_abs_roll_mean_10',
- 'av_change_abs_roll_std_100',
- 'av_change_abs_roll_std_10',
- 'q99_roll_mean_1000',
- 'avg_first_10000',
- 'kurt',
- 'q01_roll_mean_1000',
- 'abs_q99',
- 'q99_roll_mean_100',
- 'trend',
- 'q99_roll_std_10',
- 'modeAudio',
- 'q99_roll_std_1000',
- 'medianAudio',
- 'max_to_min',
- 'abs_q01',
- 'q99_roll_std_100']
+              'std_roll_mean_10', 'std_first_10000', 'av_change_rate_roll_mean_10', 'mean_change_rate',
+              'std_roll_std_1000', 'av_change_rate_roll_std_1000', 'q95_roll_std_1000', 'min_first_50000',
+              'min_first_10000', 'min_last_10000', 'std_first_50000', 'q95_roll_mean_100', 'max_roll_mean_100',
+              'q05_roll_mean_100', 'std_roll_mean_100', 'av_change_rate_roll_mean_100', 'avg_last_10000',
+              'min_roll_mean_100', 'max_first_50000', 'ave_roll_mean_100', 'max_last_50000', 'std_last_50000',
+              'max_last_10000', 'max_roll_std_10','std_roll_mean_1000','av_change_rate_roll_mean_1000','max_roll_mean_1000','q01_roll_mean_100',
+              'min_last_50000','mad','ave_roll_mean_1000','q95_roll_mean_1000','max_to_min_diff','stdAudioIncrease', 'min_roll_mean_1000', 'q05_roll_mean_1000', 'count_big',
+              'abs_max_roll_std_1000', 'abs_max_roll_std_10','abs_max_roll_std_100', 'meanAudio', 'avg_last_50000','avg_first_50000','std_last_10000','q99_roll_mean_10',
+              'av_change_abs_roll_mean_1000','av_change_abs_roll_std_1000','av_change_abs_roll_mean_100','av_change_abs_roll_mean_10','av_change_abs_roll_std_100',
+              'av_change_abs_roll_std_10', 'q99_roll_mean_1000','avg_first_10000','kurt','q01_roll_mean_1000','abs_q99','q99_roll_mean_100',
+              'trend','q99_roll_std_10','modeAudio','q99_roll_std_1000','medianAudio','max_to_min','abs_q01','q99_roll_std_100']
 
+
+summary= attributes
+X = chunks[summary]
+y = chunks['minTime']
+
+
+Xtrain,Xval,ytrain,yval = model_selection.train_test_split(X,y,test_size=0.25)
+
+Xtest = pd.read_csv('test.csv)
+Xtest = Xtest[attributes]
 
 
 #%% train all classifiers
         
-classifiers = 'DTC RF LOGREG KNN SVM GNB XGB'.split(sep=' ')
+classifiers = 'DTC RF LINREG KNN SVM GNB XGB'.split(sep=' ')
 predictions = np.zeros((len(y_test),len(classifiers)))
 
 dtc = tree.DecisionTreeClassifier(criterion='gini',max_depth=max_depth) #train decision tree

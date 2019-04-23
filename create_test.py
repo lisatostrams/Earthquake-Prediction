@@ -1,75 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Apr 12 13:31:12 2019
+Created on Tue Apr 23 14:27:41 2019
 
 @author: Lisa
 """
-
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Apr 12 12:20:11 2019
-
-@author: Lisa
-"""
-summary= attributes
-X = chunks[summary]
-y = chunks['minTime']
-
-
-X,Xtest,y,ytest = model_selection.train_test_split(X,y,test_size=0.5)
-
-#%%
-import xgboost as xgb
-
-xgb_model = xgb.XGBRegressor(objective="reg:linear",max_depth=1)
-
-xgb_model = xgb_model.fit(X, y.values)
-
-
-y_est = xgb_model.predict(Xtest)
-y_est[y_est<0] = 0
-import sklearn.metrics as metric
-print('MSE xgb: {:.4f}'.format(metric.mean_squared_error(ytest,y_est)))
-#%%
-
-
-X = chunks[summary]
-y = chunks['minTime']
-y_est = xgb_model.predict(X)
-y_est[y_est<0] = 0
-
-plt.style.use('ggplot')
-fig, ax = plt.subplots(10,1,figsize=(16,30))
-i=0
-coeff = xgb_model.feature_importances_
-attribute_importance = [(attributes[i],coeff[i]) for i in range(len(attributes))]
-attributes_sorted = sorted(attribute_importance, key=lambda item: abs(item[1]), reverse=True)
-plots = [s[0] for s in attributes_sorted[:10]]
-coeff = [s[1] for s in attributes_sorted]
-for s in plots:
-    ax2 = ax[i].twinx()
-    chunks['minTime'].plot(color=list(plt.rcParams['axes.prop_cycle'])[1]['color'],alpha=0.8,ax=ax[i])
-    ax[i].grid(False)
-    ax[i].tick_params(axis='y',labelleft=False,left=False)
-    #ax[i,0].set_ylim([0.1,1])
-    chunks[s].plot(ax = ax2,alpha=.95)
-    ax2.set_ylabel('Time to failure',color=list(plt.rcParams['axes.prop_cycle'])[1]['color'])
-    lim = ax[i].get_ylim()
-    ax3 = ax[i].twinx()
-    ax3.plot(y_est,color='g',alpha=0.6)
-    ax3.set_ylim(lim)
-    ax3.tick_params(axis='y',labelleft=False,left=False)
-    ax3.grid(False)
-    ax[i].set_title('xgb feature importance: {:.4f}'.format(coeff[i]))
-    ax[i].set_ylabel(s,fontsize=16)
-    i=i+1
-    
-plt.tight_layout()
-plt.savefig('xgb_prediction.png',dpi=300)
-
-
-#%%
-
 
 submission = pd.read_csv('Data/sample_submission.csv')
 
@@ -138,7 +72,7 @@ for file in submission['seg_id']:
     
     X_tr['abs_q95'] = np.quantile(np.abs(x), 0.95)
     X_tr['abs_q99'] = np.quantile(np.abs(x), 0.99)
-    #X_tr['abs_q05'] = np.quantile(np.abs(x), 0.05)
+    X_tr['abs_q05'] = np.quantile(np.abs(x), 0.05)
     X_tr['abs_q01'] = np.quantile(np.abs(x), 0.01)
 
     X_tr['trend'] = add_trend_feature(x)
@@ -178,12 +112,9 @@ for file in submission['seg_id']:
         X_tr[ 'abs_max_roll_mean_' + str(windows)] = np.abs(x_roll_mean).max()
     
     
-    X_tr = X_tr.drop('abs_max_roll_mean_1000',axis=1)
     X_tr = X_tr[summary]
-    y_est = xgb_model.predict(X_tr)
-    y_est[y_est<0] = 0
-    submission.loc[submission['seg_id']==file,'time_to_failure'] = y_est[0]
+    for s in summary:
+        submission.loc[submission['seg_id']==file,s] = X_tr[s]
     
-#%%
     
-submission.to_csv('submissionxgb.csv',index=False)
+submission.to_csv('test.csv',index=False)
