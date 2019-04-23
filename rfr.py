@@ -19,7 +19,7 @@ Created on Fri Apr 12 12:20:11 2019
 
 @author: Lisa
 """
-summary= 'meanAudio medianAudio modeAudio stdAudio stdAudioIncrease maxAudio minAudio q75Audio q25Audio'.split()
+summary= attributes
 X = chunks[summary]
 y = chunks['minTime']
 
@@ -48,10 +48,14 @@ y_est = rfr_model.predict(X)
 y_est[y_est<0] = 0
 
 plt.style.use('ggplot')
-fig, ax = plt.subplots(len(summary),1,figsize=(16,24))
+fig, ax = plt.subplots(10,1,figsize=(16,24))
 i=0
 coeff = rfr_model.feature_importances_
-for s in summary:
+attribute_importance = [(attributes[i],coeff[i]) for i in range(len(attributes))]
+attributes_sorted = sorted(attribute_importance, key=lambda item: abs(item[1]), reverse=True)
+plots = [s[0] for s in attributes_sorted[:10]]
+coeff = [s[1] for s in attributes_sorted]
+for s in plots:
     ax2 = ax[i].twinx()
     chunks['minTime'].plot(color=list(plt.rcParams['axes.prop_cycle'])[1]['color'],alpha=0.8,ax=ax[i])
     ax[i].grid(False)
@@ -66,7 +70,7 @@ for s in summary:
     ax3.tick_params(axis='y',labelleft=False,left=False)
     ax3.grid(False)
     ax[i].set_title('rfr feature importance: {:.4f}'.format(coeff[i]))
-    ax[i].set_ylabel(s,fontsize=26)
+    ax[i].set_ylabel(s,fontsize=16)
     i=i+1
     
 plt.tight_layout()

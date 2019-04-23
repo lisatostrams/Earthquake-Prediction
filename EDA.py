@@ -69,7 +69,9 @@ col = ['std_first_50000', 'std_last_50000', 'std_first_10000',
 'q01_roll_mean_1000', 'q05_roll_mean_1000', 'q95_roll_mean_1000',
 'q99_roll_mean_1000', 'av_change_abs_roll_mean_1000',
 'av_change_rate_roll_mean_1000', 'abs_max_roll_mean_1000']
+
 summary = summ+col
+#%%
 summarized_data = np.zeros((4195,len(summary)))
 i = 0
 start_time = time.time()
