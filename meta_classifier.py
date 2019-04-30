@@ -145,38 +145,7 @@ predictions[:,7] = hr.predict(Xtest_norm)
 ytrain_est[:,7] = hr.predict(Xtrain_norm)
 yval_est[:,7] = hr.predict(Xval_norm)
 
-lgb_train = lgb.Dataset(Xtrain, ytrain)
-lgb_eval = lgb.Dataset(Xval, yval, reference=lgb_train)
-params = {
-    'boosting_type': 'gbdt',
-    'objective': 'regression',
-    'metric': {'l2', 'l1'},
-    'num_leaves': 31,
-    'learning_rate': 0.05,
-    'feature_fraction': 0.9,
-    'bagging_fraction': 0.8,
-    'bagging_freq': 5,
-    'verbose': 0
-}
-gbm = lgb.train(params,
-                lgb_train,
-                num_boost_round=20,
-                valid_sets=lgb_eval,
-                early_stopping_rounds=5)
-
-print('Saving model...')
-# save model to file
-gbm.save_model('model.txt')
-
-print('Starting predicting...')
-# predict
-predictions[:,11] = gbm.predict(Xtest, num_iteration=gbm.best_iteration)
-ytrain_est[:,11] = gbm.predict(Xtrain, num_iteration=gbm.best_iteration)
-yval_est[:,11] = gbm.predict(Xval, num_iteration = gbm.best_iteration)
-
 # eval
-
-
 d_train = xgb.DMatrix(data=Xtrain_norm, label=ytrain, feature_names=Xtrain.columns)
 d_val = xgb.DMatrix(data=Xval_norm, label=yval, feature_names=Xval.columns)
 evallist = [(d_val, 'eval'), (d_train, 'train')]
@@ -197,10 +166,38 @@ ytrain_est[:,9] = abc.predict(Xtrain)
 yval_est[:,9] = abc.predict(Xval)
 
 kernel = RBF(length_scale=10.0)
-gp = GaussianProcessRegressor(kernel=kernel,alpha=2).fit(Xtrain_norm, ytrain)
+gp = GaussianProcessRegressor(kernel=kernel,alpha=.1).fit(Xtrain_norm, ytrain)
 predictions[:,10] = gp.predict(Xtest_norm)
 ytrain_est[:,10] = gp.predict(Xtrain_norm)
 yval_est[:,10] = gp.predict(Xval_norm)
+
+lgb_train = lgb.Dataset(Xtrain, ytrain)
+lgb_eval = lgb.Dataset(Xval, yval, reference=lgb_train)
+params = {
+    'boosting_type': 'gbdt',
+    'objective': 'regression',
+    'metric': {'l2', 'l1'},
+    'num_leaves': 64,
+    'learning_rate': 0.05,
+    'feature_fraction': 0.9,
+    'bagging_fraction': 0.8,
+    'bagging_freq': 5,
+    'verbose': 0
+}
+gbm = lgb.train(params,
+                lgb_train,
+                num_boost_round=20,
+                valid_sets=lgb_eval,
+                early_stopping_rounds=5)
+
+print('Saving model...')
+# save model to file
+gbm.save_model('model.txt')
+print('Starting predicting...')
+# predict
+predictions[:,11] = gbm.predict(Xtest, num_iteration=gbm.best_iteration)
+ytrain_est[:,11] = gbm.predict(Xtrain, num_iteration=gbm.best_iteration)
+yval_est[:,11] = gbm.predict(Xval, num_iteration = gbm.best_iteration)
 
 #%%
 mseval = np.zeros((len(yval),len(classifiers)))
