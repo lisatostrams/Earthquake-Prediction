@@ -19,7 +19,33 @@ from scipy.signal import hilbert
 from scipy.signal import hann
 from numpy import convolve
 
+def kalman(chunk, model):
+    #    
+    n_iter = len(chunk)
+    sz = (n_iter,) # size of array
+    # truth value (typo??? in example intro kalman paper at top of p. 13 calls this z)
+    z = chunk['acoustic_data'] # observations 
+    Q =  model[2] # process variance
+    xhat=np.zeros(sz)      # a posteri estimate of x
+    P=0         # a posteri error estimate
+    xhatminus=0 # a priori estimate of x
+    Pminus=0   # a priori error estimate
+    K=0       # gain or blending factor
+    R = model[1] #variance of the model
+    # intial guesses
+    xhat[:5] = model[0] #model mean
+    P = 1.0
+    Pminus = P+Q  #static Q    
+    K = Pminus/( Pminus+R ) #static R  
+    P = (1-K)*Pminus
+    T = z.diff().rolling(window=5).mean()
+    for k in range(5,n_iter):
+        # time update
+        xhatminus = xhat[k-1]+T.iloc[k]     
+        xhat[k] = xhatminus+K*(z.iloc[k]-xhatminus)
 
+    return xhat
+    
 
 def autocorr(x):
     result = np.correlate(x, x, mode='full')
@@ -115,10 +141,14 @@ summary = ['q01_roll_std_100', 'min_roll_std_100', 'q01_roll_std_10', 'min_roll_
               'Hann_window_mean_15000','classic_sta_lta1_mean','classic_sta_lta2_mean','classic_sta_lta3_mean',
               'classic_sta_lta4_mean','classic_sta_lta5_mean','classic_sta_lta6_mean','classic_sta_lta7_mean','classic_sta_lta8_mean','autocorr_1',
               'autocorr_5','autocorr_10','autocorr_50','autocorr_100','autocorr_500',
-              'autocorr_1000','autocorr_5000','autocorr_10000','abs_max_roll_mean_1000']
+              'autocorr_1000','autocorr_5000','autocorr_10000','abs_max_roll_mean_1000',
+              'abs_q05','Kalman_correction','exp_Moving_average_300_mean','exp_Moving_average_3000_mean',
+              'exp_Moving_average_30000_mean','MA_700MA_std_mean','MA_700MA_BB_high_mean','MA_700MA_BB_low_mean',
+              'MA_400MA_std_mean','MA_400MA_BB_high_mean','MA_400MA_BB_low_mean','MA_1000MA_std_mean','q999','q001','q99_roll_std_100']
 
 
-
+meanmodel = pd.read_csv('kalmanmodel.csv')
+model = [meanmodel['mean'][0],meanmodel['std'][0],meanmodel['diff'][0]]
 #%%
 reader = pd.read_csv("Data/train.csv",
                     dtype={'acoustic_data': np.int16, 'time_to_failure': np.float32},
@@ -218,6 +248,9 @@ for df in reader:
     Train.loc[i,'gmean'] = stats.gmean(np.abs(x[np.nonzero(x)[0]]))
     
     Train.loc[i,'Hilbert_mean'] = np.abs(hilbert(x)).mean()
+    
+    kalmanx = kalman(df, model)
+    Train.loc[i, 'Kalman_correction'] = np.mean(abs(kalmanx - df['acoustic_data'].values))
     
     Train.loc[i, 'Moving_average_700_mean'] = x.rolling(window=700).mean().mean(skipna=True)
     ewma = pd.Series.ewm

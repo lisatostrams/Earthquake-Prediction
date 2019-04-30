@@ -13,7 +13,8 @@ reader = pd.read_csv("Data/train.csv",
 
 i=0
 
-meandf = pd.DataFrame(index=range(0,150000),columns=['mean','std','max','min','sum','abs_sum','diff'])
+meandf = pd.DataFrame(index=range(0,1),columns=['mean','std','max','min','sum','abs_sum','diff'])
+meandf.iloc[0]=0
 for df in reader:
    if(i%50==0):
        print(i)
@@ -21,11 +22,11 @@ for df in reader:
    if(len(df)==150000):
         meandf['mean'] = meandf['mean']+((1/4194)*df['acoustic_data'].mean())
         meandf['std'] = meandf['std']+((1/4194)*df['acoustic_data'].std())
-        meandf['max'] = meandf['std']+((1/4194)*df['acoustic_data'].max())
-        meandf['min'] = meandf['std']+((1/4194)*df['acoustic_data'].min())
-        meandf['sum'] = meandf['std']+((1/4194)*df['acoustic_data'].sum())
-        meandf['abs_sum'] =meandf['std']+((1/4194)* np.abs(df['acoustic_data']).sum())
-        meandf['diff'] = meandf['std']+((1/4194)*df['acoustic_data'].diff().mean())
+        meandf['max'] = meandf['max']+((1/4194)*df['acoustic_data'].max())
+        meandf['min'] = meandf['min']+((1/4194)*df['acoustic_data'].min())
+        meandf['sum'] = meandf['sum']+((1/4194)*df['acoustic_data'].sum())
+        meandf['abs_sum'] =meandf['abs_sum']+((1/4194)* np.abs(df['acoustic_data']).sum())
+        meandf['diff'] = meandf['diff']+((1/4194)*df['acoustic_data'].diff().mean())
         
     
 meandf.to_csv('kalmanmodel.csv',index=False)
