@@ -5,40 +5,47 @@ Created on Wed Apr 17 12:05:09 2019
 @author: Lisa
 """
 
-max_depth = 1
+max_depth = 2
 
-n_estimators = 10
+n_estimators = 500
 
-tol = 0.01
+tol = 0.001
 
-nn = 15
 
 xgb_params = {
     'eval_metric': 'rmse',
     'seed': 1337,
     'verbosity': 0,
+    'max_depth':2,
 }
+
 
 
 #%%
 import pandas as pd
 from sklearn import tree
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LogisticRegression
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import SVC
-from sklearn.naive_bayes import GaussianNB
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import BayesianRidge
+from sklearn.linear_model import HuberRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.svm import LinearSVR
+from sklearn.svm import SVR
 import xgboost as xgb
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF
+from sklearn.ensemble import AdaBoostRegressor
+from sklearn.metrics import mean_absolute_error
 
 from sklearn import model_selection
 import matplotlib.pyplot as plt
 import numpy as np
 
-chunks = pd.read_csv("summarized_data_150000.csv")
+chunks = pd.read_csv("XTrain.csv")
 print('There are {} chunks in the file.'.format(len(chunks)))
 
-attributes = ['q01_roll_std_100', 'min_roll_std_100', 'q01_roll_std_10', 'min_roll_std_10',
-              'q01_roll_std_1000', 'min_roll_std_1000', 'max_roll_std_1000', 'mean_change_abs',
+summary = ['q01_roll_std_100', 'min_roll_std_100', 'q01_roll_std_10', 'min_roll_std_10','hmean','gmean','Hilbert_mean',
+              'q01_roll_std_1000', 'min_roll_std_1000', 'max_roll_std_1000', 'mean_change_abs','iqr','iqr1','ave10',
               'mean_change_rate_first_50000', 'sum', 'q05_roll_std_10', 'q05_roll_mean_10',
               'q05_roll_std_100', 'q01_roll_mean_10', 'q05_roll_std_1000', 'mean_change_rate_last_10000',
               'mean_change_rate_last_50000', 'mean_change_rate_first_10000', 'q99', 'max_roll_std_100',
@@ -57,128 +64,169 @@ attributes = ['q01_roll_std_100', 'min_roll_std_100', 'q01_roll_std_10', 'min_ro
               'abs_max_roll_std_1000', 'abs_max_roll_std_10','abs_max_roll_std_100', 'meanAudio', 'avg_last_50000','avg_first_50000','std_last_10000','q99_roll_mean_10',
               'av_change_abs_roll_mean_1000','av_change_abs_roll_std_1000','av_change_abs_roll_mean_100','av_change_abs_roll_mean_10','av_change_abs_roll_std_100',
               'av_change_abs_roll_std_10', 'q99_roll_mean_1000','avg_first_10000','kurt','q01_roll_mean_1000','abs_q99','q99_roll_mean_100',
-              'trend','q99_roll_std_10','modeAudio','q99_roll_std_1000','medianAudio','max_to_min','abs_q01','q99_roll_std_100']
+              'trend','q99_roll_std_10','modeAudio','q99_roll_std_1000','medianAudio','max_to_min','abs_q01','q99_roll_std_100',
+              'abs_q05', 'Hann_window_mean_50', 'Hann_window_mean_150','Hann_window_mean_1500',
+              'Hann_window_mean_15000','classic_sta_lta1_mean','classic_sta_lta2_mean','classic_sta_lta3_mean',
+              'classic_sta_lta4_mean','classic_sta_lta5_mean','classic_sta_lta6_mean','classic_sta_lta7_mean','classic_sta_lta8_mean','autocorr_1',
+              'autocorr_5','autocorr_10','autocorr_50','autocorr_100','autocorr_500',
+              'autocorr_1000','autocorr_5000','autocorr_10000','abs_max_roll_mean_1000']
 
+X = chunks[summary]
+y = chunks['endTime']
+X=X.replace([np.inf, -np.inf], np.nan)
+X=X.fillna(0)
 
+Xtrain,Xval,ytrain,yval = model_selection.train_test_split(X,y,test_size=0.4)
 
-X = chunks[attributes]
-y = chunks['minTime']
+Test = pd.read_csv('Xtest.csv')
+Xtest = Test[summary]
 
-
-Xtrain,Xval,ytrain,yval = model_selection.train_test_split(X,y,test_size=0.25)
-
-Test = pd.read_csv('test.csv')
-Xtest = Test[attributes]
-
+from sklearn import preprocessing
+scaler = preprocessing.StandardScaler().fit(Xtrain)
+Xtrain_norm = scaler.transform(Xtrain)
+Xval_norm = scaler.transform(Xval)
+Xtest_norm = scaler.transform(Xtest)
 
 #%% train all classifiers
         
-classifiers = 'DTC RF LINREG KNN SVM GNB XGB'.split(sep=' ')
-predictions = np.zeros((len(yval),len(classifiers)))
+classifiers = 'DTC RF LINREG KNN SVM SVMlinear BRR HR XGB ADA GP'.split(sep=' ')
+predictions = np.zeros((len(Xtest),len(classifiers)))
+ytrain_est = np.zeros((len(Xtrain),len(classifiers)))
+yval_est = np.zeros((len(Xval),len(classifiers)))
 
-dtc = tree.DecisionTreeClassifier(criterion='gini',max_depth=max_depth) #train decision tree
-dtc = dtc.fit(X_train,y_train)
-predictions[:,0] = dtc.predict(X_test)
+dtc = tree.DecisionTreeRegressor(max_depth=max_depth) #train decision tree
+dtc = dtc.fit(Xtrain,ytrain)
+predictions[:,0] = dtc.predict(Xtest)
+ytrain_est[:,0] = dtc.predict(Xtrain)
+yval_est[:,0] = dtc.predict(Xval)
 
 rf = RandomForestRegressor(n_estimators = n_estimators)
-rf = rf.fit(X_train, y_train)
-predictions[:,1] = np.round(rf.predict(X_test),0)
+rf = rf.fit(Xtrain, ytrain)
+predictions[:,1] = rf.predict(Xtest)
+ytrain_est[:,1] = rf.predict(Xtrain)
+yval_est[:,1] = rf.predict(Xval)
 
-logreg = LogisticRegression(tol=tol,)
-logreg = logreg.fit(Xlr_train, y_train)
-predictions[:,2] = logreg.predict(Xlr_test)
+reg = LinearRegression()
+reg = reg.fit(Xtrain, ytrain)
+predictions[:,2] = reg.predict(Xtest)
+ytrain_est[:,2] = reg.predict(Xtrain)
+yval_est[:,2] = reg.predict(Xval)
 
-knn = KNeighborsClassifier(nn)
-knn = knn.fit(X_train,y_train)
-predictions[:,3] = knn.predict(X_test)
 
-svm = SVC(tol=tol)
-svm = svm.fit(X_train, y_train)
-predictions[:,4] = svm.predict(X_test)
 
-gnb = GaussianNB()
-gnb = gnb.fit(X_train, y_train)
-predictions[:,5] = gnb.predict(X_test)
+knn = KNeighborsRegressor(n_neighbors=25,algorithm='ball_tree')
+knn = knn.fit(Xtrain,ytrain)
+predictions[:,3] = knn.predict(Xtest)
+ytrain_est[:,3] = knn.predict(Xtrain)
+yval_est[:,3] = knn.predict(Xval)
 
-d_train = xgb.DMatrix(data=X_train, label=y_train, feature_names=X_train.columns)
-d_test = xgb.DMatrix(data=X_test, label=y_test, feature_names=X_test.columns)
-evallist = [(d_test, 'eval'), (d_train, 'train')]
-model = xgb.train(dtrain=d_train, num_boost_round=30000, evals=evallist, early_stopping_rounds=5000,  params=xgb_params)
-predictions[:,6] = np.round(model.predict(d_test, ntree_limit=model.best_ntree_limit),0)
+svmnorm = SVR(tol=tol,gamma='auto')
+svmnorm = svmnorm.fit(Xtrain_norm, ytrain)
+predictions[:,4] = svmnorm.predict(Xtest_norm)
+ytrain_est[:,4] = svmnorm.predict(Xtrain_norm)
+yval_est[:,4] = svmnorm.predict(Xval_norm)
+
+svmlnorm = LinearSVR(max_iter=5000)
+svmlnorm = svmlnorm.fit(Xtrain_norm,ytrain)
+predictions[:,5] = svmlnorm.predict(Xtest_norm)
+ytrain_est[:,5] = svmlnorm.predict(Xtrain_norm)
+yval_est[:,5] = svmlnorm.predict(Xval_norm)
+
+gnb = BayesianRidge()
+gnb = gnb.fit(Xtrain_norm, ytrain)
+predictions[:,6] = gnb.predict(Xtest_norm)
+ytrain_est[:,6] = gnb.predict(Xtrain_norm)
+yval_est[:,6] = gnb.predict(Xval_norm)
+
+hr = HuberRegressor()
+hr = hr.fit(Xtrain_norm, ytrain)
+predictions[:,7] = hr.predict(Xtest_norm)
+ytrain_est[:,7] = hr.predict(Xtrain_norm)
+yval_est[:,7] = hr.predict(Xval_norm)
+
+d_train = xgb.DMatrix(data=Xtrain_norm, label=ytrain, feature_names=Xtrain.columns)
+d_val = xgb.DMatrix(data=Xval_norm, label=yval, feature_names=Xval.columns)
+evallist = [(d_val, 'eval'), (d_train, 'train')]
+model = xgb.train(dtrain=d_train, num_boost_round=100, evals=evallist, early_stopping_rounds=50,  params=xgb_params)
+predictions[:,8] = model.predict(xgb.DMatrix(data=Xtest_norm, feature_names=Xtest.columns))
+ytrain_est[:,8] = model.predict(d_train, ntree_limit=model.best_ntree_limit)
+yval_est[:,8] = model.predict(d_val, ntree_limit=model.best_ntree_limit)
+
+#mapFeat = dict(zip(["f"+str(i) for i in range(len(features))],features))
+#ts = pd.Series(clf.booster().get_fscore())
+#ts.index = ts.reset_index()['index'].map(mapFeat)
+#ts.order()[-15:].plot(kind="barh", title=("features importance"))
+
+abc = AdaBoostRegressor()
+abc = abc.fit(Xtrain,ytrain)
+predictions[:,9] = abc.predict(Xtest)
+ytrain_est[:,9] = abc.predict(Xtrain)
+yval_est[:,9] = abc.predict(Xval)
+
+kernel = RBF(length_scale=10.0)
+gp = GaussianProcessRegressor(kernel=kernel,alpha=2).fit(Xtrain_norm, ytrain)
+predictions[:,10] = gp.predict(Xtest_norm)
+ytrain_est[:,10] = gp.predict(Xtrain_norm)
+yval_est[:,10] = gp.predict(Xval_norm)
 
 #%%
-correct = np.zeros((len(y_test),len(classifiers)))
+mseval = np.zeros((len(yval),len(classifiers)))
+msetrain = np.zeros((len(ytrain),len(classifiers)))
 for i in range(len(classifiers)):
-    err = 1-np.mean(predictions[:,i]==y_test)
+    ytrain_est[ytrain_est[:,i]<0,i] = 0
+    yval_est[yval_est[:,i]<0,i] = 0
+    err = np.mean(abs(ytrain_est[:,i] - ytrain))
+    print('Train error for {} is: {:.4f}'.format(classifiers[i],err))
+    err = np.mean(abs(yval_est[:,i] - yval))
     print('Test error for {} is: {:.4f}'.format(classifiers[i],err))
-    correct[:,i] = predictions[:,i] == y_test
+    mseval[:,i] = abs(yval_est[:,i] - yval)
+    msetrain[:,i] = abs(ytrain_est[:,i] - ytrain)
     if(min(predictions[:,i])<0):
-        print(classifiers[i])
         predictions[predictions[:,i]<0,i] = 0
     if(np.any(np.isnan(predictions[:,i]))):
         print(classifiers[i])
-        
-    if(max(predictions[:,i]>4)):
-        print(classifiers[i])
-        predictions[predictions[:,i]>4,i] = 4
     if(np.all(np.isfinite(predictions[:,i]))==0):
         print(classifiers[i])
         
-correctdf = pd.DataFrame(correct)
-print('In total, {:.2f}% of the testset is classified correctly by at least one classifier'.format(correctdf.max(axis=1).mean()*100))
-
+msevaldf = pd.DataFrame(mseval)
+msetraindf = pd.DataFrame(msetrain)
+print('In total, by selecting the optimal classifier the training MSE is {:.2f}'.format(msetraindf.min(axis=1).mean()))
+print('In total, by selecting the optimal classifier the validation MSE is {:2f}'.format(msevaldf.min(axis=1).mean()))
 
 #%%
-from sklearn.neural_network import MLPClassifier
-import seaborn as sn
-from sklearn.metrics import confusion_matrix
+from sklearn.neural_network import MLPRegressor
 
-def plot_confusion_matrix(cm,y):
-    df_cm = pd.DataFrame(cm, index = [i+1 for i in np.unique(y)],
-                  columns = [i+1 for i in np.unique(y)])
-    plt.figure()
-    sn.heatmap(df_cm, annot=True)
-    plt.title('Confusion matrix')
-    plt.xlabel('Predicted class')
-    plt.ylabel('Actual class')
-    plt.show()
+models = []
+accuracy = []
+models_sse = []
+sse = []
+for i in range(1,30):
+    model_j = []
+    score_j = []
+    sse_j = []
+    for j in range(0,10):
+        clf = MLPRegressor(solver='sgd',hidden_layer_sizes=(i,))
+        clf.fit(yval_est, yval)
+        model_j.append(clf)
+        score_j.append(np.mean(abs(clf.predict(yval_est) - yval)))
+        
     
+    print("Layer {} test accuracy: {:.4f}".format(i,min(score_j)))
+    print()
     
-from sklearn import model_selection
-cv = model_selection.KFold(n_splits=10)
-train_error = np.zeros(10)
-test_error = np.zeros(10)
+    models.append(model_j[np.argmin(score_j)])
+    accuracy.append(min(score_j))
+#%%
+model_acc = np.argmin(accuracy)
+print('Best number of hlayers test acc = {}'.format(model_acc+1)) 
 
-k=0
-for train_index,test_index in cv.split(predictions):
-    mlp_train = predictions[train_index,:]
-    mlpy_train = y_test.iloc[train_index]
-    mlp_test = predictions[test_index,:]
-    mlpy_test = y_test.iloc[test_index]
-    print('Fold {}'.format(k))
-   
-    best_train = np.inf
-    best_test = np.inf
-    for i in range(5):
-        clf = MLPClassifier(solver='lbfgs', hidden_layer_sizes=(10,))
-        clf.fit(mlp_train, mlpy_train) 
-        c = 1- clf.score(mlp_train,mlpy_train)
-        if(c < best_train):
-            best_train=c
-        e_test = 1- clf.score(mlp_test,mlpy_test)
-        if(e_test < best_test):
-            best_test=e_test
-    train_error[k] = best_train
-    test_error[k] = best_test
-    k+=1
-
-print('Average training error: {} \nAverage test error: {}'.format(np.mean(train_error),np.mean(test_error)))
+clf = models[model_acc]
+y_est = clf.predict(predictions)
+y_est[y_est<0] = 0
+#%%
 
 
-#test = pd.read_csv('Data/preprocessedtest.csv')
-#X_test = test.drop('Description',axis=1) #drop non numerical values
-#id = X_test['PetID']
-#X_test = X_test.drop('PetID',axis=1) #
-#X_test = X_test.drop('RescuerID',axis=1)
-#X_test = X_test[attributes]
-#y_est = dtc.predict(X_test)
+submission = pd.DataFrame(index=Test.index,columns=['seg_id','time_to_failure'])
+submission['seg_id'] = Test['seg_id'].values
+submission['time_to_failure'] = y_est
+submission.to_csv('submission.csv',index=False)

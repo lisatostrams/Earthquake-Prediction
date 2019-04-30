@@ -8,8 +8,9 @@ Created on Thu Apr 11 10:44:14 2019
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-chunks = pd.read_csv("summarized_data_150000.csv")
+chunks = pd.read_csv("XTrain.csv")
 print('There are {} chunks in the file.'.format(len(chunks)))
+timediff = chunks['endTime'].diff()
 events = chunks.index[chunks['event'] == 1]-1
 
 #%%
