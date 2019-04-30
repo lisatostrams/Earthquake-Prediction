@@ -40,6 +40,7 @@ from sklearn.metrics import mean_absolute_error
 from sklearn import model_selection
 import matplotlib.pyplot as plt
 import numpy as np
+import lightgbm as lgb
 
 chunks = pd.read_csv("XTrain.csv")
 print('There are {} chunks in the file.'.format(len(chunks)))
@@ -89,7 +90,7 @@ Xtest_norm = scaler.transform(Xtest)
 
 #%% train all classifiers
         
-classifiers = 'DTC RF LINREG KNN SVM SVMlinear BRR HR XGB ADA GP'.split(sep=' ')
+classifiers = 'DTC RF LINREG KNN SVM SVMlinear BRR HR XGB ADA GP LGBM'.split(sep=' ')
 predictions = np.zeros((len(Xtest),len(classifiers)))
 ytrain_est = np.zeros((len(Xtrain),len(classifiers)))
 yval_est = np.zeros((len(Xval),len(classifiers)))
@@ -143,6 +144,38 @@ hr = hr.fit(Xtrain_norm, ytrain)
 predictions[:,7] = hr.predict(Xtest_norm)
 ytrain_est[:,7] = hr.predict(Xtrain_norm)
 yval_est[:,7] = hr.predict(Xval_norm)
+
+lgb_train = lgb.Dataset(Xtrain, ytrain)
+lgb_eval = lgb.Dataset(Xval, yval, reference=lgb_train)
+params = {
+    'boosting_type': 'gbdt',
+    'objective': 'regression',
+    'metric': {'l2', 'l1'},
+    'num_leaves': 31,
+    'learning_rate': 0.05,
+    'feature_fraction': 0.9,
+    'bagging_fraction': 0.8,
+    'bagging_freq': 5,
+    'verbose': 0
+}
+gbm = lgb.train(params,
+                lgb_train,
+                num_boost_round=20,
+                valid_sets=lgb_eval,
+                early_stopping_rounds=5)
+
+print('Saving model...')
+# save model to file
+gbm.save_model('model.txt')
+
+print('Starting predicting...')
+# predict
+predictions[:,11] = gbm.predict(Xtest, num_iteration=gbm.best_iteration)
+ytrain_est[:,11] = gbm.predict(Xtrain, num_iteration=gbm.best_iteration)
+yval_est[:,11] = gbm.predict(Xval, num_iteration = gbm.best_iteration)
+
+# eval
+
 
 d_train = xgb.DMatrix(data=Xtrain_norm, label=ytrain, feature_names=Xtrain.columns)
 d_val = xgb.DMatrix(data=Xval_norm, label=yval, feature_names=Xval.columns)
@@ -205,7 +238,7 @@ for i in range(1,30):
     score_j = []
     sse_j = []
     for j in range(0,10):
-        clf = MLPRegressor(solver='sgd',hidden_layer_sizes=(i,))
+        clf = MLPRegressor(solver='lbfgs',hidden_layer_sizes=(i,))
         clf.fit(yval_est, yval)
         model_j.append(clf)
         score_j.append(np.mean(abs(clf.predict(yval_est) - yval)))
