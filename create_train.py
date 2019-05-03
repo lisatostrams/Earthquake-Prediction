@@ -25,7 +25,7 @@ def kalman(chunk, model):
     sz = (n_iter,) # size of array
     # truth value (typo??? in example intro kalman paper at top of p. 13 calls this z)
     z = chunk['acoustic_data'] # observations 
-    Q =  model[2] # process variance
+    Q =  0.1 # process variance
     xhat=np.zeros(sz)      # a posteri estimate of x
     P=0         # a posteri error estimate
     xhatminus=0 # a priori estimate of x
@@ -33,12 +33,15 @@ def kalman(chunk, model):
     K=0       # gain or blending factor
     R = model[1] #variance of the model
     # intial guesses
-    xhat[:5] = model[0] #model mean
+    xhat[:5] = z[:5] #model mean
     P = 1.0
     Pminus = P+Q  #static Q    
     K = Pminus/( Pminus+R ) #static R  
     P = (1-K)*Pminus
     T = z.diff().rolling(window=5).mean()
+    
+    #B = lfilter([a], [1, -b], A)
+    
     for k in range(5,n_iter):
         # time update
         xhatminus = xhat[k-1]+T.iloc[k]     
@@ -140,11 +143,12 @@ summary = ['q01_roll_std_100', 'min_roll_std_100', 'q01_roll_std_10', 'min_roll_
               'abs_q05', 'Hann_window_mean_50', 'Hann_window_mean_150','Hann_window_mean_1500',
               'Hann_window_mean_15000','classic_sta_lta1_mean','classic_sta_lta2_mean','classic_sta_lta3_mean',
               'classic_sta_lta4_mean','classic_sta_lta5_mean','classic_sta_lta6_mean','classic_sta_lta7_mean','classic_sta_lta8_mean','autocorr_1',
-              'autocorr_5','autocorr_10','autocorr_50','autocorr_100','autocorr_500',
-              'autocorr_1000','autocorr_5000','autocorr_10000','abs_max_roll_mean_1000',
+              'autocorr_5','autocorr_10','autocorr_50','autocorr_100','autocorr_500','autocorr_1000','autocorr_5000','autocorr_10000','abs_max_roll_mean_1000',
               'abs_q05','Kalman_correction','exp_Moving_average_300_mean','exp_Moving_average_3000_mean',
               'exp_Moving_average_30000_mean','MA_700MA_std_mean','MA_700MA_BB_high_mean','MA_700MA_BB_low_mean',
-              'MA_400MA_std_mean','MA_400MA_BB_high_mean','MA_400MA_BB_low_mean','MA_1000MA_std_mean','q999','q001','q99_roll_std_100']
+              'MA_400MA_std_mean','MA_400MA_BB_high_mean','MA_400MA_BB_low_mean','MA_1000MA_std_mean','q999','q001','q99_roll_std_100',
+              'Rmean','Rstd','Rmax','Rmin','Imean','Istd','Imax','Imin','Rmean_last_5000','Rstd__last_5000','Rmax_last_5000','Rmin_last_5000',
+              'Rmean_last_15000','Rstd_last_15000','Rmax_last_15000','Rmin_last_15000']
 
 
 meanmodel = pd.read_csv('kalmanmodel.csv')
@@ -158,7 +162,6 @@ dtiny = 1e-5
 
 
 
-
 #%%
 
 #%%
@@ -167,7 +170,8 @@ summarized_data = np.zeros((4195,len(summary)))
 i = 0
 start_time = time.time()
 for df in reader:
-    if(i%50==0):
+    if(i%50==1):
+        break
         print(i)
     maxi = df.max()
     mini = df.min()
@@ -192,6 +196,27 @@ for df in reader:
     Train.loc[i,'q75Audio'] = q75[0]
     Train.loc[i,'q25Audio'] = q25[0]
     x = pd.Series(df['acoustic_data'].values)
+    zc = np.fft.fft(x)
+    
+    realFFT = np.real(zc)
+    imagFFT = np.imag(zc)
+    Train.loc[i, 'Rmean'] = realFFT.mean()
+    Train.loc[i, 'Rstd'] = realFFT.std()
+    Train.loc[i, 'Rmax'] = realFFT.max()
+    Train.loc[i, 'Rmin'] = realFFT.min()
+    Train.loc[i, 'Imean'] = imagFFT.mean()
+    Train.loc[i, 'Istd'] = imagFFT.std()
+    Train.loc[i, 'Imax'] = imagFFT.max()
+    Train.loc[i, 'Imin'] = imagFFT.min()
+    Train.loc[i, 'Rmean_last_5000'] = realFFT[-5000:].mean()
+    Train.loc[i, 'Rstd__last_5000'] = realFFT[-5000:].std()
+    Train.loc[i, 'Rmax_last_5000'] = realFFT[-5000:].max()
+    Train.loc[i, 'Rmin_last_5000'] = realFFT[-5000:].min()
+    Train.loc[i, 'Rmean_last_15000'] = realFFT[-15000:].mean()
+    Train.loc[i, 'Rstd_last_15000'] = realFFT[-15000:].std()
+    Train.loc[i, 'Rmax_last_15000'] = realFFT[-15000:].max()
+    Train.loc[i, 'Rmin_last_15000'] = realFFT[-15000:].min()
+    
     Train.loc[i,'mean_change_abs'] = np.mean(np.diff(x))
     Train.loc[i,'mean_change_rate'] = calc_change_rate(x)
     
@@ -331,4 +356,4 @@ for df in reader:
 
 #%%    
     
-Train.to_csv('XTrain.csv')
+#Train.to_csv('XTrain.csv')

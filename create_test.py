@@ -178,6 +178,27 @@ for file in submission['seg_id']:
     Test.loc[i,'q75Audio'] = q75[0]
     Test.loc[i,'q25Audio'] = q25[0]
     x = pd.Series(test['acoustic_data'].values)
+    zc = np.fft.fft(x)
+    
+    realFFT = np.real(zc)
+    imagFFT = np.imag(zc)
+    Test.loc[i, 'Rmean'] = realFFT.mean()
+    Test.loc[i, 'Rstd'] = realFFT.std()
+    Test.loc[i, 'Rmax'] = realFFT.max()
+    Test.loc[i, 'Rmin'] = realFFT.min()
+    Test.loc[i, 'Imean'] = imagFFT.mean()
+    Test.loc[i, 'Istd'] = imagFFT.std()
+    Test.loc[i, 'Imax'] = imagFFT.max()
+    Test.loc[i, 'Imin'] = imagFFT.min()
+    Test.loc[i, 'Rmean_last_5000'] = realFFT[-5000:].mean()
+    Test.loc[i, 'Rstd__last_5000'] = realFFT[-5000:].std()
+    Test.loc[i, 'Rmax_last_5000'] = realFFT[-5000:].max()
+    Test.loc[i, 'Rmin_last_5000'] = realFFT[-5000:].min()
+    Test.loc[i, 'Rmean_last_15000'] = realFFT[-15000:].mean()
+    Test.loc[i, 'Rstd_last_15000'] = realFFT[-15000:].std()
+    Test.loc[i, 'Rmax_last_15000'] = realFFT[-15000:].max()
+    Test.loc[i, 'Rmin_last_15000'] = realFFT[-15000:].min()
+    
     Test.loc[i,'mean_change_abs'] = np.mean(np.diff(x))
     Test.loc[i,'mean_change_rate'] = calc_change_rate(x)
     
