@@ -224,39 +224,23 @@ print('In total, by selecting the optimal classifier the training MSE is {:.2f}'
 print('In total, by selecting the optimal classifier the validation MSE is {:2f}'.format(msevaldf.min(axis=1).mean()))
 
 #%%
-from sklearn.neural_network import MLPRegressor
+from tpot import TPOTRegressor
 
-models = []
-accuracy = []
-models_sse = []
-sse = []
-for i in range(1,30):
-    model_j = []
-    score_j = []
-    sse_j = []
-    for j in range(0,10):
-        clf = MLPRegressor(solver='lbfgs',hidden_layer_sizes=(i,))
-        clf.fit(yval_est, yval)
-        model_j.append(clf)
-        score_j.append(np.mean(abs(clf.predict(yval_est) - yval)))
-        
-    
-    print("Layer {} test accuracy: {:.4f}".format(i,min(score_j)))
-    print()
-    
-    models.append(model_j[np.argmin(score_j)])
-    accuracy.append(min(score_j))
+pipeline_optimizer = TPOTRegressor(max_time_mins=100)
+pipeline_optimizer.fit(yval_est, yval)
+print(pipeline_optimizer.score(yval_est, yval))
+pipeline_optimizer.export('tpot_exported_pipeline.py')
+
 #%%
-model_acc = np.argmin(accuracy)
-print('Best number of hlayers test acc = {}'.format(model_acc+1)) 
-
-clf = models[model_acc]
-y_est = clf.predict(predictions)
-y_est[y_est<0] = 0
-#%%
-
+exported_pipeline = make_pipeline(
+    FeatureAgglomeration(affinity="l1", linkage="complete"),
+    StackingEstimator(estimator=XGBRegressor(learning_rate=0.01, max_depth=2, min_child_weight=11, n_estimators=100, nthread=1, subsample=0.7500000000000001)),
+    LassoLarsCV(normalize=False)
+)
+exported_pipeline.fit(yval_est, yval)
+results = exported_pipeline.predict(predictions)
 
 submission = pd.DataFrame(index=Test.index,columns=['seg_id','time_to_failure'])
 submission['seg_id'] = Test['seg_id'].values
-submission['time_to_failure'] = y_est
+submission['time_to_failure'] = results
 submission.to_csv('submission.csv',index=False)
