@@ -42,6 +42,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import lightgbm as lgb
 
+from sklearn.kernel_approximation import Nystroem
+from sklearn.linear_model import ElasticNetCV
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import make_pipeline, make_union
+from sklearn.preprocessing import PolynomialFeatures
+from tpot.builtins import StackingEstimator
+from sklearn.preprocessing import FunctionTransformer
+from copy import copy
+
 chunks = pd.read_csv("XTrain.csv")
 print('There are {} chunks in the file.'.format(len(chunks)))
 
@@ -226,16 +235,25 @@ print('In total, by selecting the optimal classifier the validation MSE is {:2f}
 #%%
 from tpot import TPOTRegressor
 
+
 pipeline_optimizer = TPOTRegressor(max_time_mins=100)
 pipeline_optimizer.fit(yval_est, yval)
 print(pipeline_optimizer.score(yval_est, yval))
 pipeline_optimizer.export('tpot_exported_pipeline.py')
 
 #%%
+
 exported_pipeline = make_pipeline(
-    FeatureAgglomeration(affinity="l1", linkage="complete"),
-    StackingEstimator(estimator=XGBRegressor(learning_rate=0.01, max_depth=2, min_child_weight=11, n_estimators=100, nthread=1, subsample=0.7500000000000001)),
-    LassoLarsCV(normalize=False)
+    make_union(
+        make_pipeline(
+            PolynomialFeatures(degree=2, include_bias=False, interaction_only=False),
+            StackingEstimator(estimator=RandomForestRegressor(bootstrap=True, max_features=0.25, min_samples_leaf=17, min_samples_split=8, n_estimators=100)),
+            StackingEstimator(estimator=AdaBoostRegressor(learning_rate=1.0, loss="exponential", n_estimators=100)),
+            Nystroem(gamma=0.1, kernel="additive_chi2", n_components=7)
+        ),
+        FunctionTransformer(copy)
+    ),
+    ElasticNetCV(l1_ratio=0.9, tol=0.01)
 )
 exported_pipeline.fit(yval_est, yval)
 results = exported_pipeline.predict(predictions)
