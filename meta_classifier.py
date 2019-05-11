@@ -209,6 +209,37 @@ ytrain_est[:,11] = gbm.predict(Xtrain, num_iteration=gbm.best_iteration)
 yval_est[:,11] = gbm.predict(Xval, num_iteration = gbm.best_iteration)
 
 #%%
+"""
+models = []
+accuracy = []
+models_sse = []
+sse = []
+for i in range(1,30):
+    model_j = []
+    score_j = []
+    sse_j = []
+    for j in range(0,10):
+        clf = MLPRegressor(solver='lbfgs',hidden_layer_sizes=(i,))
+        clf.fit(yval_est, yval)
+        model_j.append(clf)
+        score_j.append(np.mean(abs(clf.predict(yval_est) - yval)))
+        
+    
+    print("Layer {} test accuracy: {:.4f}".format(i,min(score_j)))
+    print()
+    
+    models.append(model_j[np.argmin(score_j)])
+    accuracy.append(min(score_j))
+    """"
+#%%
+model_acc = np.argmin(accuracy)
+print('Best number of hlayers test acc = {}'.format(model_acc+1)) 
+
+clf = models[model_acc]
+y_est = clf.predict(predictions)
+y_est[y_est<0] = 0
+
+#%%
 mseval = np.zeros((len(yval),len(classifiers)))
 msetrain = np.zeros((len(ytrain),len(classifiers)))
 for i in range(len(classifiers)):
@@ -235,26 +266,15 @@ print('In total, by selecting the optimal classifier the validation MSE is {:2f}
 #%%
 from tpot import TPOTRegressor
 
-
-pipeline_optimizer = TPOTRegressor(max_time_mins=100)
+pipeline_optimizer = TPOTRegressor(generations=8, population_size=10, cv=15,
+                                    random_state=42, verbosity=2)
 pipeline_optimizer.fit(yval_est, yval)
 print(pipeline_optimizer.score(yval_est, yval))
 pipeline_optimizer.export('tpot_exported_pipeline.py')
 
 #%%
 
-exported_pipeline = make_pipeline(
-    make_union(
-        make_pipeline(
-            PolynomialFeatures(degree=2, include_bias=False, interaction_only=False),
-            StackingEstimator(estimator=RandomForestRegressor(bootstrap=True, max_features=0.25, min_samples_leaf=17, min_samples_split=8, n_estimators=100)),
-            StackingEstimator(estimator=AdaBoostRegressor(learning_rate=1.0, loss="exponential", n_estimators=100)),
-            Nystroem(gamma=0.1, kernel="additive_chi2", n_components=7)
-        ),
-        FunctionTransformer(copy)
-    ),
-    ElasticNetCV(l1_ratio=0.9, tol=0.01)
-)
+exported_pipeline = ElasticNetCV(l1_ratio=0.25, tol=0.0001)
 exported_pipeline.fit(yval_est, yval)
 results = exported_pipeline.predict(predictions)
 

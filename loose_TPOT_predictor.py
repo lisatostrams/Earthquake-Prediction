@@ -101,7 +101,7 @@ Xtest_norm = scaler.transform(Xtest)
 
 from tpot import TPOTRegressor
 
-pipeline_optimizer = TPOTRegressor(max_time_mins=10)
+pipeline_optimizer = TPOTRegressor()
 pipeline_optimizer.fit(Xtrain, ytrain)
 print(pipeline_optimizer.score(Xtrain, ytrain))
 pipeline_optimizer.export('tpot_exported_pipeline2.py')
