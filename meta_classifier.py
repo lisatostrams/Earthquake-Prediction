@@ -33,7 +33,7 @@ from sklearn.svm import LinearSVR
 from sklearn.svm import SVR
 import xgboost as xgb
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.metrics import mean_absolute_error
 
@@ -78,13 +78,18 @@ summary = ['q01_roll_std_100', 'min_roll_std_100', 'q01_roll_std_10', 'min_roll_
               'abs_q05', 'Hann_window_mean_50', 'Hann_window_mean_150','Hann_window_mean_1500',
               'Hann_window_mean_15000','classic_sta_lta1_mean','classic_sta_lta2_mean','classic_sta_lta3_mean',
               'classic_sta_lta4_mean','classic_sta_lta5_mean','classic_sta_lta6_mean','classic_sta_lta7_mean','classic_sta_lta8_mean','autocorr_1',
-              'autocorr_5','autocorr_10','autocorr_50','autocorr_100','autocorr_500',
-              'autocorr_1000','autocorr_5000','autocorr_10000','abs_max_roll_mean_1000']
+              'autocorr_5','autocorr_10','autocorr_50','autocorr_100','autocorr_500','autocorr_1000','autocorr_5000','autocorr_10000','abs_max_roll_mean_1000',
+              'Kalman_correction','exp_Moving_average_300_mean','exp_Moving_average_3000_mean',
+              'exp_Moving_average_30000_mean','MA_700MA_std_mean','MA_700MA_BB_high_mean','MA_700MA_BB_low_mean',
+              'MA_400MA_std_mean','MA_400MA_BB_high_mean','MA_400MA_BB_low_mean','MA_1000MA_std_mean','q999','q001',
+              'Rmean','Rstd','Rmax','Rmin','Imean','Istd','Imax','Imin','Rmean_last_5000','Rstd__last_5000','Rmax_last_5000','Rmin_last_5000',
+              'Rmean_last_15000','Rstd_last_15000','Rmax_last_15000','Rmin_last_15000']
 
 X = chunks[summary]
 y = chunks['endTime']
 X=X.replace([np.inf, -np.inf], np.nan)
 X=X.fillna(0)
+y=y.fillna(0)
 
 Xtrain,Xval,ytrain,yval = model_selection.train_test_split(X,y,test_size=0.4)
 
@@ -96,7 +101,7 @@ scaler = preprocessing.StandardScaler().fit(Xtrain)
 Xtrain_norm = scaler.transform(Xtrain)
 Xval_norm = scaler.transform(Xval)
 Xtest_norm = scaler.transform(Xtest)
-
+prr
 #%% train all classifiers
         
 classifiers = 'DTC RF LINREG KNN SVM SVMlinear BRR HR XGB ADA GP LGBM'.split(sep=' ')
@@ -174,8 +179,8 @@ predictions[:,9] = abc.predict(Xtest)
 ytrain_est[:,9] = abc.predict(Xtrain)
 yval_est[:,9] = abc.predict(Xval)
 
-kernel = RBF(length_scale=10.0)
-gp = GaussianProcessRegressor(kernel=kernel,alpha=.1).fit(Xtrain_norm, ytrain)
+kernel = np.var(y)* RBF(length_scale=1)
+gp = GaussianProcessRegressor(kernel=kernel,alpha=0.1).fit(Xtrain_norm, ytrain)
 predictions[:,10] = gp.predict(Xtest_norm)
 ytrain_est[:,10] = gp.predict(Xtrain_norm)
 yval_est[:,10] = gp.predict(Xval_norm)
@@ -223,6 +228,7 @@ for i in range(len(classifiers)):
     if(min(predictions[:,i])<0):
         predictions[predictions[:,i]<0,i] = 0
     if(np.any(np.isnan(predictions[:,i]))):
+        
         print(classifiers[i])
     if(np.all(np.isfinite(predictions[:,i]))==0):
         print(classifiers[i])

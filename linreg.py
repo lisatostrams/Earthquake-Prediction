@@ -4,7 +4,7 @@ Created on Fri Apr 12 12:20:11 2019
 
 @author: Lisa
 """
-summary= attributes
+#summary= attributes
 X = chunks[summary]
 y = chunks['endTime']
 
@@ -24,23 +24,24 @@ import sklearn.metrics as metric
 print('mse linear regression: {:.4f}'.format(metric.mean_squared_error(ytest,y_est)))
 #%%
 
-X = chunks[summary]
-y = chunks['minTime']
+#X = chunks[summary]
+#y = chunks['endTime']
 y_est = reg.predict(X)
-y_est[y_est<0] = 0
+#y_est[y_est<0] = 0
+#X = X.fillna(0)
 
 plt.style.use('ggplot')
 
 i=0
 coeff = reg.coef_
-attribute_importance = [(attributes[i],coeff[i]) for i in range(len(attributes))]
+attribute_importance = [(summary[i],coeff[i]) for i in range(len(summary))]
 attributes_sorted = sorted(attribute_importance, key=lambda item: abs(item[1]), reverse=True)
 plots = [s[0] for s in attributes_sorted[:10]]
 coeff = [s[1] for s in attributes_sorted]
 fig, ax = plt.subplots(10,1,figsize=(16,24))
 for s in plots:
     ax2 = ax[i].twinx()
-    chunks['minTime'].plot(color=list(plt.rcParams['axes.prop_cycle'])[1]['color'],alpha=0.8,ax=ax[i])
+    chunks['endTime'].plot(color=list(plt.rcParams['axes.prop_cycle'])[1]['color'],alpha=0.8,ax=ax[i])
     ax[i].grid(False)
     ax[i].tick_params(axis='y',labelleft=False,left=False)
     #ax[i,0].set_ylim([0.1,1])
@@ -52,7 +53,7 @@ for s in plots:
     ax3.set_ylim(lim)
     ax3.tick_params(axis='y',labelleft=False,left=False)
     ax3.grid(False)
-    ax[i].set_ylabel(s,fontsize=16)
+    ax[i].set_ylabel(s,fontsize=10)
     ax[i].set_title('linreg coefficient: {:.4f}'.format(coeff[i]))
     i=i+1
     

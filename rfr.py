@@ -19,9 +19,9 @@ Created on Fri Apr 12 12:20:11 2019
 
 @author: Lisa
 """
-summary= attributes
+#summary= attributes
 X = chunks[summary]
-y = chunks['minTime']
+y = chunks['endTime']
 
 import sklearn.model_selection as model_selection
 
@@ -35,6 +35,7 @@ rfr_model = RandomForestRegressor(n_estimators=500)
 rfr_model = rfr_model.fit(X, y)
 
 
+
 y_est = rfr_model.predict(Xtest)
 y_est[y_est<0] = 0
 import sklearn.metrics as metric
@@ -42,8 +43,8 @@ print('mse random forest regressor: {:.4f}'.format(metric.mean_squared_error(yte
 #%%
 
 
-X = chunks[summary]
-y = chunks['minTime']
+#X = chunks[summary]
+#y = chunks['minTime']
 y_est = rfr_model.predict(X)
 y_est[y_est<0] = 0
 
@@ -51,13 +52,13 @@ plt.style.use('ggplot')
 fig, ax = plt.subplots(10,1,figsize=(16,24))
 i=0
 coeff = rfr_model.feature_importances_
-attribute_importance = [(attributes[i],coeff[i]) for i in range(len(attributes))]
+attribute_importance = [(summary[i],coeff[i]) for i in range(len(summary))]
 attributes_sorted = sorted(attribute_importance, key=lambda item: abs(item[1]), reverse=True)
 plots = [s[0] for s in attributes_sorted[:10]]
 coeff = [s[1] for s in attributes_sorted]
 for s in plots:
     ax2 = ax[i].twinx()
-    chunks['minTime'].plot(color=list(plt.rcParams['axes.prop_cycle'])[1]['color'],alpha=0.8,ax=ax[i])
+    chunks['endTime'].plot(color=list(plt.rcParams['axes.prop_cycle'])[1]['color'],alpha=0.8,ax=ax[i])
     ax[i].grid(False)
     ax[i].tick_params(axis='y',labelleft=False,left=False)
     #ax[i,0].set_ylim([0.1,1])
@@ -70,7 +71,7 @@ for s in plots:
     ax3.tick_params(axis='y',labelleft=False,left=False)
     ax3.grid(False)
     ax[i].set_title('rfr feature importance: {:.4f}'.format(coeff[i]))
-    ax[i].set_ylabel(s,fontsize=16)
+    ax[i].set_ylabel(s,fontsize=10)
     i=i+1
     
 plt.tight_layout()
