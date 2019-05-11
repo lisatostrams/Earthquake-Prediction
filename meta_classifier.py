@@ -101,7 +101,7 @@ scaler = preprocessing.StandardScaler().fit(Xtrain)
 Xtrain_norm = scaler.transform(Xtrain)
 Xval_norm = scaler.transform(Xval)
 Xtest_norm = scaler.transform(Xtest)
-prr
+
 #%% train all classifiers
         
 classifiers = 'DTC RF LINREG KNN SVM SVMlinear BRR HR XGB ADA GP LGBM'.split(sep=' ')
