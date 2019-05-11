@@ -11,7 +11,7 @@ import numpy as np
 chunks = pd.read_csv("XTrain.csv")
 print('There are {} chunks in the file.'.format(len(chunks)))
 timediff = chunks['endTime'].diff()
-events = chunks.index[chunks['event'] == 1]-1
+
 
 #%%
 
@@ -32,19 +32,27 @@ attributes = [s[0] for s in attributes_sorted]
 #%%
 plt.style.use('ggplot')
 
-sumplot = [s[0] for s in attributes_sorted[:15]]
-fig, ax = plt.subplots(len(sumplot),1,figsize=(8,50))
+sumplot = [s[0] for s in attributes_sorted[:40]]
+fig, ax = plt.subplots(10,4,figsize=(40,40))
 i=0
+j=0
 for s in sumplot:
     
-    chunks_other[s].hist(color='g',ax = ax[i],bins=100,alpha=.8)
-
-    ax2 = ax[i].twinx()
-
-    chunks_event[s].hist(color='r',ax= ax2,bins=16,alpha=.7,grid=False)
-    ax[i].set_ylabel(s,fontsize=20)
-    ax[i].set_title('Correlation with endTime: {:.4f}'.format(chunks[s].corr(chunks['endTime'])))
-    i=i+1
+    
+    
+    ax2 = ax[i,j].twinx()
+    
+    chunks['endTime'].plot(color=list(plt.rcParams['axes.prop_cycle'])[1]['color'],alpha=0.8,ax=ax2)
+    chunks[s].plot(ax = ax[i,j],alpha=.95)
+    #ax[i,j].grid(False)
+    ax2.grid(False)
+    ax[i,j].set_ylabel(s,fontsize=15,color='r')
+    ax[i,j].set_title('{} Correlation with endTime: {:.4f}'.format(s,chunks[s].corr(chunks['endTime'])))
+    j=j+1
+    if(j%4==0):
+        i=i+1
+        j=0
+    
 
 plt.tight_layout()
 plt.savefig('summary.png',dpi=300)

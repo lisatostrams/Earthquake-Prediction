@@ -33,8 +33,8 @@ print('MSE xgb: {:.4f}'.format(metric.mean_squared_error(ytest,y_est)))
 #%%
 
 
-X = chunks[summary]
-y = chunks['minTime']
+#X = chunks[summary]
+#y = chunks['minTime']
 y_est = xgb_model.predict(X)
 y_est[y_est<0] = 0
 
@@ -42,13 +42,13 @@ plt.style.use('ggplot')
 fig, ax = plt.subplots(10,1,figsize=(16,30))
 i=0
 coeff = xgb_model.feature_importances_
-attribute_importance = [(attributes[i],coeff[i]) for i in range(len(attributes))]
+attribute_importance = [(summary[i],coeff[i]) for i in range(len(summary))]
 attributes_sorted = sorted(attribute_importance, key=lambda item: abs(item[1]), reverse=True)
 plots = [s[0] for s in attributes_sorted[:10]]
 coeff = [s[1] for s in attributes_sorted]
 for s in plots:
     ax2 = ax[i].twinx()
-    chunks['minTime'].plot(color=list(plt.rcParams['axes.prop_cycle'])[1]['color'],alpha=0.8,ax=ax[i])
+    chunks['endTime'].plot(color=list(plt.rcParams['axes.prop_cycle'])[1]['color'],alpha=0.8,ax=ax[i])
     ax[i].grid(False)
     ax[i].tick_params(axis='y',labelleft=False,left=False)
     #ax[i,0].set_ylim([0.1,1])
