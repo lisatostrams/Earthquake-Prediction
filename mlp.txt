@@ -27,3 +27,14 @@ y_est = clf.predict(predictions)
 y_est[y_est<0] = 0
 #%%
 
+
+
+exported_pipeline = make_pipeline(
+    SelectPercentile(score_func=f_regression, percentile=73),
+    ExtraTreesRegressor(bootstrap=True, max_features=0.7500000000000001, min_samples_leaf=16, min_samples_split=5, n_estimators=100)
+)
+
+exported_pipeline.fit(training_features, training_target)
+results = exported_pipeline.predict(testing_features)
+
+(-5.8?) to do:

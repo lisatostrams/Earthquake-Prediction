@@ -101,13 +101,16 @@ Xtest_norm = scaler.transform(Xtest)
 
 from tpot import TPOTRegressor
 
-pipeline_optimizer = TPOTRegressor(max_time_mins=10)
+
+print(Xtrain.shape)
+print(ytrain.shape)
+pipeline_optimizer = TPOTRegressor()
 pipeline_optimizer.fit(Xtrain, ytrain)
 print(pipeline_optimizer.score(Xtrain, ytrain))
 pipeline_optimizer.export('tpot_exported_pipeline2.py')
 
 #%%
-
+from sklearn.preprocessing import StandardScaler
 exported_pipeline = make_pipeline(
     StandardScaler(),
     RandomForestRegressor(bootstrap=True, max_features=0.15000000000000002, min_samples_leaf=19, min_samples_split=8, n_estimators=100)
@@ -119,3 +122,4 @@ submission = pd.DataFrame(index=Test.index,columns=['seg_id','time_to_failure'])
 submission['seg_id'] = Test['seg_id'].values
 submission['time_to_failure'] = results
 submission.to_csv('submission.csv',index=False)
+print('submission done')

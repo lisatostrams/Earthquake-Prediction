@@ -9,8 +9,8 @@ features = tpot_data.drop('target', axis=1).values
 training_features, testing_features, training_target, testing_target = \
             train_test_split(features, tpot_data['target'].values, random_state=None)
 
-# Average CV score on the training set was:-7.069747020426045
-exported_pipeline = ExtraTreesRegressor(bootstrap=False, max_features=1.0, min_samples_leaf=15, min_samples_split=4, n_estimators=100)
+# Average CV score on the training set was:-7.262911074150447
+exported_pipeline = ExtraTreesRegressor(bootstrap=True, max_features=1.0, min_samples_leaf=11, min_samples_split=13, n_estimators=100)
 
 exported_pipeline.fit(training_features, training_target)
 results = exported_pipeline.predict(testing_features)

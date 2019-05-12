@@ -104,7 +104,7 @@ Xtest_norm = scaler.transform(Xtest)
 
 #%% train all classifiers
         
-classifiers = 'DTC RF LINREG KNN SVM SVMlinear BRR HR XGB ADA GP LGBM'.split(sep=' ')
+classifiers = 'DTC RF LINREG KNN SVM SVMlinear BRR HR XGB ADA GP LGBM TPOT'.split(sep=' ')
 predictions = np.zeros((len(Xtest),len(classifiers)))
 ytrain_est = np.zeros((len(Xtrain),len(classifiers)))
 yval_est = np.zeros((len(Xval),len(classifiers)))
@@ -126,8 +126,6 @@ reg = reg.fit(Xtrain, ytrain)
 predictions[:,2] = reg.predict(Xtest)
 ytrain_est[:,2] = reg.predict(Xtrain)
 yval_est[:,2] = reg.predict(Xval)
-
-
 
 knn = KNeighborsRegressor(n_neighbors=25,algorithm='ball_tree')
 knn = knn.fit(Xtrain,ytrain)
@@ -191,27 +189,45 @@ params = {
     'boosting_type': 'gbdt',
     'objective': 'regression',
     'metric': {'l2', 'l1'},
-    'num_leaves': 64,
+    'num_leaves': 31,
     'learning_rate': 0.05,
     'feature_fraction': 0.9,
     'bagging_fraction': 0.8,
     'bagging_freq': 5,
     'verbose': 0
 }
+print("train lgb")
 gbm = lgb.train(params,
                 lgb_train,
-                num_boost_round=20,
+                num_boost_round=60000,
                 valid_sets=lgb_eval,
-                early_stopping_rounds=5)
+                early_stopping_rounds=500)
 
 print('Saving model...')
 # save model to file
 gbm.save_model('model.txt')
-print('Starting predicting...')
+print('Starting prediction...')
 # predict
 predictions[:,11] = gbm.predict(Xtest, num_iteration=gbm.best_iteration)
 ytrain_est[:,11] = gbm.predict(Xtrain, num_iteration=gbm.best_iteration)
 yval_est[:,11] = gbm.predict(Xval, num_iteration = gbm.best_iteration)
+
+
+#%%
+
+from tpot import TPOTRegressor
+
+
+print(Xtrain.shape)
+print(ytrain.shape)
+Tp = TPOTRegressor(verbosity = 2, max_time_mins = 10)
+Tp.fit(Xtrain, ytrain)
+print(Tp.score(Xtrain, ytrain))
+Tp.export('tpot_exported_pipeline2.py')
+print("tpot done")
+predictions[:,12] = Tp.predict(Xtest)
+ytrain_est[:,12] = Tp.predict(Xtrain)
+yval_est[:,12] = Tp.predict(Xval)
 
 #%%
 mseval = np.zeros((len(yval),len(classifiers)))
@@ -239,32 +255,91 @@ print('In total, by selecting the optimal classifier the training MSE is {:.2f}'
 print('In total, by selecting the optimal classifier the validation MSE is {:2f}'.format(msevaldf.min(axis=1).mean()))
 
 #%%
-from tpot import TPOTRegressor
+# generating the best TPOT model as mlp:
+'''from tpot import TPOTRegressor
 
-
-pipeline_optimizer = TPOTRegressor(max_time_mins=100)
+pipeline_optimizer = TPOTRegressor()
 pipeline_optimizer.fit(yval_est, yval)
+print('execute optimizer')
 print(pipeline_optimizer.score(yval_est, yval))
 pipeline_optimizer.export('tpot_exported_pipeline.py')
-
+'''
 #%%
+# generating the best tpot model as feature:
+'''
+from tpot import TPOTRegressor
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import AdaBoostRegressor, ExtraTreesRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import make_pipeline, make_union
+from tpot.builtins import StackingEstimator
+
+print(Xtrain.shape)
+print(ytrain.shape)
+#pipeline_optimizer = TPOTRegressor(verbosity = 2)
+Tp = make_pipeline(
+    StackingEstimator(estimator=AdaBoostRegressor(learning_rate=1.0, loss="linear", n_estimators=100)),
+    ExtraTreesRegressor(bootstrap=False, max_features=0.4, min_samples_leaf=11, min_samples_split=18, n_estimators=100)
+)
+Tp.fit(Xtrain_norm, ytrain)
+predictions[:,12] = Tp.predict(Xtest_norm)
+ytrain_est[:,12] = Tp.predict(Xtrain_norm)
+yval_est[:,12] = Tp.predict(Xval_norm)
+
+'''
+#%%
+# using optimal pipeline for predictions as total
+'''
+from tpot.builtins import OneHotEncoder
+from sklearn.linear_model import LassoLarsCV
 
 exported_pipeline = make_pipeline(
-    make_union(
-        make_pipeline(
-            PolynomialFeatures(degree=2, include_bias=False, interaction_only=False),
-            StackingEstimator(estimator=RandomForestRegressor(bootstrap=True, max_features=0.25, min_samples_leaf=17, min_samples_split=8, n_estimators=100)),
-            StackingEstimator(estimator=AdaBoostRegressor(learning_rate=1.0, loss="exponential", n_estimators=100)),
-            Nystroem(gamma=0.1, kernel="additive_chi2", n_components=7)
-        ),
-        FunctionTransformer(copy)
-    ),
-    ElasticNetCV(l1_ratio=0.9, tol=0.01)
+    OneHotEncoder(minimum_fraction=0.2, sparse=False, threshold=10),
+    LassoLarsCV(normalize=False)
 )
+
 exported_pipeline.fit(yval_est, yval)
 results = exported_pipeline.predict(predictions)
+'''
 
+#%%
+# use TPOT as an extra regressor for the MLP:
+
+#%%
+# the MLP used to bring all code together
+from sklearn.neural_network import MLPRegressor
+models = []
+accuracy = []
+models_sse = []
+sse = []
+for i in range(1,30):
+    model_j = []
+    score_j = []
+    sse_j = []
+    for j in range(0,10):
+        clf = MLPRegressor(solver='lbfgs',hidden_layer_sizes=(i,))
+        clf.fit(yval_est, yval)
+        model_j.append(clf)
+        score_j.append(np.mean(abs(clf.predict(yval_est) - yval)))
+        
+    
+    print("Layer {} test accuracy: {:.4f}".format(i,min(score_j)))
+    print()
+    
+    models.append(model_j[np.argmin(score_j)])
+    accuracy.append(min(score_j))
+#%%
+model_acc = np.argmin(accuracy)
+print('Best number of hlayers test acc = {}'.format(model_acc+1)) 
+
+clf = models[model_acc]
+y_est = clf.predict(predictions)
+y_est[y_est<0] = 0
+#%%
+
+print("making submission")
 submission = pd.DataFrame(index=Test.index,columns=['seg_id','time_to_failure'])
 submission['seg_id'] = Test['seg_id'].values
-submission['time_to_failure'] = results
+submission['time_to_failure'] = y_est
 submission.to_csv('submission.csv',index=False)
