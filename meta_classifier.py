@@ -24,6 +24,7 @@ xgb_params = {
 #%%
 import pandas as pd
 from sklearn import tree
+from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import BayesianRidge
@@ -220,11 +221,8 @@ from tpot import TPOTRegressor
 
 print(Xtrain.shape)
 print(ytrain.shape)
-Tp = TPOTRegressor(verbosity = 2, max_time_mins = 10)
-Tp.fit(Xtrain, ytrain)
-print(Tp.score(Xtrain, ytrain))
-Tp.export('tpot_exported_pipeline2.py')
-print("tpot done")
+Tp = ExtraTreesRegressor(bootstrap=True, max_features=0.55, min_samples_leaf=2, min_samples_split=15, n_estimators=100)
+Tp.fit(Xtrain,ytrain)
 predictions[:,12] = Tp.predict(Xtest)
 ytrain_est[:,12] = Tp.predict(Xtrain)
 yval_est[:,12] = Tp.predict(Xval)
@@ -256,7 +254,8 @@ print('In total, by selecting the optimal classifier the validation MSE is {:2f}
 
 #%%
 # generating the best TPOT model as mlp:
-'''from tpot import TPOTRegressor
+'''
+from tpot import TPOTRegressor
 
 pipeline_optimizer = TPOTRegressor()
 pipeline_optimizer.fit(yval_est, yval)

@@ -155,7 +155,7 @@ meanmodel = pd.read_csv('kalmanmodel.csv')
 model = [meanmodel['mean'][0],meanmodel['std'][0],meanmodel['diff'][0]]
 
 #%%
-reader = pd.read_csv("Data/train.csv",
+reader = pd.read_csv("C:/Users/pepij/OneDrive/Music/Documenten/data_mlp/MLIP2/train.csv",
                     dtype={'acoustic_data': np.int16, 'time_to_failure': np.float32},
                     chunksize=150000)
 Train = pd.DataFrame(index=range(4195),columns=summary+['endTime'])
