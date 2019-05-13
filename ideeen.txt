@@ -1,0 +1,6 @@
+- te proberen:
+	tweaken parameters algoritmes:
+	algoritmes weghalen?
+	tpot & MLP
+	losse TPOT
+	best model selection?

@@ -200,9 +200,9 @@ params = {
 print("train lgb")
 gbm = lgb.train(params,
                 lgb_train,
-                num_boost_round=60000,
+                num_boost_round=20000,
                 valid_sets=lgb_eval,
-                early_stopping_rounds=500)
+                early_stopping_rounds=200)
 
 print('Saving model...')
 # save model to file
@@ -221,8 +221,8 @@ from tpot import TPOTRegressor
 
 print(Xtrain.shape)
 print(ytrain.shape)
-Tp = ExtraTreesRegressor(bootstrap=True, max_features=0.55, min_samples_leaf=2, min_samples_split=15, n_estimators=100)
-Tp.fit(Xtrain,ytrain)
+Tp = TPOTRegressor(max_time_mins = 180)
+Tp.fit(Xtrain, ytrain)
 predictions[:,12] = Tp.predict(Xtest)
 ytrain_est[:,12] = Tp.predict(Xtrain)
 yval_est[:,12] = Tp.predict(Xval)
