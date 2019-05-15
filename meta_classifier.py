@@ -16,7 +16,7 @@ xgb_params = {
     'eval_metric': 'rmse',
     'seed': 1337,
     'verbosity': 0,
-    'max_depth':2,
+    'max_depth':3,
 }
 
 
@@ -37,7 +37,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.metrics import mean_absolute_error
-
+from tpot import TPOTRegressor
 from sklearn import model_selection
 import matplotlib.pyplot as plt
 import numpy as np
@@ -92,7 +92,7 @@ X=X.replace([np.inf, -np.inf], np.nan)
 X=X.fillna(0)
 y=y.fillna(0)
 
-Xtrain,Xval,ytrain,yval = model_selection.train_test_split(X,y,test_size=0.4)
+Xtrain,Xval,ytrain,yval = model_selection.train_test_split(X,y,test_size=0.25)
 
 Test = pd.read_csv('Xtest.csv')
 Xtest = Test[summary]
@@ -105,10 +105,12 @@ Xtest_norm = scaler.transform(Xtest)
 
 #%% train all classifiers
         
-classifiers = 'DTC RF LINREG KNN SVM SVMlinear BRR HR XGB ADA GP LGBM TPOT'.split(sep=' ')
+classifiers = 'DTC RF LINREG KNN SVM SVMlinear BRR HR XGB ADA LGBM TPOT'.split(sep=' ')
 predictions = np.zeros((len(Xtest),len(classifiers)))
 ytrain_est = np.zeros((len(Xtrain),len(classifiers)))
 yval_est = np.zeros((len(Xval),len(classifiers)))
+
+print("processing classifiers")
 
 dtc = tree.DecisionTreeRegressor(max_depth=max_depth) #train decision tree
 dtc = dtc.fit(Xtrain,ytrain)
@@ -140,11 +142,14 @@ predictions[:,4] = svmnorm.predict(Xtest_norm)
 ytrain_est[:,4] = svmnorm.predict(Xtrain_norm)
 yval_est[:,4] = svmnorm.predict(Xval_norm)
 
-svmlnorm = LinearSVR(max_iter=5000)
+svmlnorm = LinearSVR(max_iter=10000)
 svmlnorm = svmlnorm.fit(Xtrain_norm,ytrain)
 predictions[:,5] = svmlnorm.predict(Xtest_norm)
 ytrain_est[:,5] = svmlnorm.predict(Xtrain_norm)
 yval_est[:,5] = svmlnorm.predict(Xval_norm)
+
+print("processing classifiers, half way")
+
 
 gnb = BayesianRidge()
 gnb = gnb.fit(Xtrain_norm, ytrain)
@@ -162,7 +167,7 @@ yval_est[:,7] = hr.predict(Xval_norm)
 d_train = xgb.DMatrix(data=Xtrain_norm, label=ytrain, feature_names=Xtrain.columns)
 d_val = xgb.DMatrix(data=Xval_norm, label=yval, feature_names=Xval.columns)
 evallist = [(d_val, 'eval'), (d_train, 'train')]
-model = xgb.train(dtrain=d_train, num_boost_round=100, evals=evallist, early_stopping_rounds=50,  params=xgb_params)
+model = xgb.train(dtrain=d_train, num_boost_round=100, evals=evallist, early_stopping_rounds=10,  params=xgb_params)
 predictions[:,8] = model.predict(xgb.DMatrix(data=Xtest_norm, feature_names=Xtest.columns))
 ytrain_est[:,8] = model.predict(d_train, ntree_limit=model.best_ntree_limit)
 yval_est[:,8] = model.predict(d_val, ntree_limit=model.best_ntree_limit)
@@ -177,13 +182,13 @@ abc = abc.fit(Xtrain,ytrain)
 predictions[:,9] = abc.predict(Xtest)
 ytrain_est[:,9] = abc.predict(Xtrain)
 yval_est[:,9] = abc.predict(Xval)
-
-kernel = np.var(y)* RBF(length_scale=1)
+'''
+kernel = np.var(y)* RBF(length_scale=0.1)
 gp = GaussianProcessRegressor(kernel=kernel,alpha=0.1).fit(Xtrain_norm, ytrain)
 predictions[:,10] = gp.predict(Xtest_norm)
 ytrain_est[:,10] = gp.predict(Xtrain_norm)
 yval_est[:,10] = gp.predict(Xval_norm)
-
+'''
 lgb_train = lgb.Dataset(Xtrain, ytrain)
 lgb_eval = lgb.Dataset(Xval, yval, reference=lgb_train)
 params = {
@@ -200,34 +205,46 @@ params = {
 print("train lgb")
 gbm = lgb.train(params,
                 lgb_train,
-                num_boost_round=20000,
+                num_boost_round=5000,
                 valid_sets=lgb_eval,
-                early_stopping_rounds=200)
+                early_stopping_rounds=10)
 
 print('Saving model...')
 # save model to file
 gbm.save_model('model.txt')
 print('Starting prediction...')
 # predict
-predictions[:,11] = gbm.predict(Xtest, num_iteration=gbm.best_iteration)
-ytrain_est[:,11] = gbm.predict(Xtrain, num_iteration=gbm.best_iteration)
-yval_est[:,11] = gbm.predict(Xval, num_iteration = gbm.best_iteration)
+predictions[:,10] = gbm.predict(Xtest, num_iteration=gbm.best_iteration)
+ytrain_est[:,10] = gbm.predict(Xtrain, num_iteration=gbm.best_iteration)
+yval_est[:,10] = gbm.predict(Xval, num_iteration = gbm.best_iteration)
+#%%
+
+print('predict tpot regression')
+Tp = ExtraTreesRegressor(bootstrap=True, max_features=0.6000000000000001, min_samples_leaf=7, min_samples_split=5, n_estimators=100)
+Tp.fit(Xtrain, ytrain)
+print(Tp.score(Xval, yval))
+predictions[:,11] = Tp.predict(Xtest)
+ytrain_est[:,11] = Tp.predict(Xtrain)
+yval_est[:,11] = Tp.predict(Xval)
+
+print("processing classifiers, all done")
 
 
 #%%
-
+'''
 from tpot import TPOTRegressor
 
 
 print(Xtrain.shape)
 print(ytrain.shape)
-Tp = TPOTRegressor(max_time_mins = 180)
+Tp = TPOTRegressor(max_time_mins = 60)
 Tp.fit(Xtrain, ytrain)
 predictions[:,12] = Tp.predict(Xtest)
 ytrain_est[:,12] = Tp.predict(Xtrain)
 yval_est[:,12] = Tp.predict(Xval)
-
+'''
 #%%
+
 mseval = np.zeros((len(yval),len(classifiers)))
 msetrain = np.zeros((len(ytrain),len(classifiers)))
 for i in range(len(classifiers)):
@@ -254,15 +271,8 @@ print('In total, by selecting the optimal classifier the validation MSE is {:2f}
 
 #%%
 # generating the best TPOT model as mlp:
-'''
-from tpot import TPOTRegressor
 
-pipeline_optimizer = TPOTRegressor()
-pipeline_optimizer.fit(yval_est, yval)
-print('execute optimizer')
-print(pipeline_optimizer.score(yval_est, yval))
-pipeline_optimizer.export('tpot_exported_pipeline.py')
-'''
+
 #%%
 # generating the best tpot model as feature:
 '''
@@ -300,13 +310,14 @@ exported_pipeline = make_pipeline(
 
 exported_pipeline.fit(yval_est, yval)
 results = exported_pipeline.predict(predictions)
-'''
 
+'''
 #%%
 # use TPOT as an extra regressor for the MLP:
 
 #%%
 # the MLP used to bring all code together
+
 from sklearn.neural_network import MLPRegressor
 models = []
 accuracy = []
@@ -328,13 +339,15 @@ for i in range(1,30):
     
     models.append(model_j[np.argmin(score_j)])
     accuracy.append(min(score_j))
+    
 #%%
-model_acc = np.argmin(accuracy)
+ model_acc = np.argmin(accuracy)
 print('Best number of hlayers test acc = {}'.format(model_acc+1)) 
 
 clf = models[model_acc]
 y_est = clf.predict(predictions)
 y_est[y_est<0] = 0
+
 #%%
 
 print("making submission")

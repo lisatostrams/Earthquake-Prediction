@@ -4,3 +4,4 @@
 	tpot & MLP
 	losse TPOT
 	best model selection?
+	train/test-split... misschien test set kleiner maken? Meer trainingssamples

@@ -1,29 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu May  9 15:15:59 2019
+Created on Wed May 15 17:14:55 2019
 
 @author: pepij
 """
 
-max_depth = 2
 
-n_estimators = 500
-
-tol = 0.001
-
-
-xgb_params = {
-    'eval_metric': 'rmse',
-    'seed': 1337,
-    'verbosity': 0,
-    'max_depth':2,
-}
-
-
-
-#%%
+from keras.models import Sequential
+from keras.layers import Dense, Activation
+from keras.layers.convolutional import Conv1D
 import pandas as pd
 from sklearn import tree
+from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import BayesianRidge
@@ -33,10 +21,10 @@ from sklearn.svm import LinearSVR
 from sklearn.svm import SVR
 import xgboost as xgb
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.metrics import mean_absolute_error
-
+from tpot import TPOTRegressor
 from sklearn import model_selection
 import matplotlib.pyplot as plt
 import numpy as np
@@ -78,48 +66,32 @@ summary = ['q01_roll_std_100', 'min_roll_std_100', 'q01_roll_std_10', 'min_roll_
               'abs_q05', 'Hann_window_mean_50', 'Hann_window_mean_150','Hann_window_mean_1500',
               'Hann_window_mean_15000','classic_sta_lta1_mean','classic_sta_lta2_mean','classic_sta_lta3_mean',
               'classic_sta_lta4_mean','classic_sta_lta5_mean','classic_sta_lta6_mean','classic_sta_lta7_mean','classic_sta_lta8_mean','autocorr_1',
-              'autocorr_5','autocorr_10','autocorr_50','autocorr_100','autocorr_500',
-              'autocorr_1000','autocorr_5000','autocorr_10000','abs_max_roll_mean_1000']
+              'autocorr_5','autocorr_10','autocorr_50','autocorr_100','autocorr_500','autocorr_1000','autocorr_5000','autocorr_10000','abs_max_roll_mean_1000',
+              'Kalman_correction','exp_Moving_average_300_mean','exp_Moving_average_3000_mean',
+              'exp_Moving_average_30000_mean','MA_700MA_std_mean','MA_700MA_BB_high_mean','MA_700MA_BB_low_mean',
+              'MA_400MA_std_mean','MA_400MA_BB_high_mean','MA_400MA_BB_low_mean','MA_1000MA_std_mean','q999','q001',
+              'Rmean','Rstd','Rmax','Rmin','Imean','Istd','Imax','Imin','Rmean_last_5000','Rstd__last_5000','Rmax_last_5000','Rmin_last_5000',
+              'Rmean_last_15000','Rstd_last_15000','Rmax_last_15000','Rmin_last_15000']
 
 X = chunks[summary]
 y = chunks['endTime']
 X=X.replace([np.inf, -np.inf], np.nan)
 X=X.fillna(0)
+y=y.fillna(0)
 
-Xtrain,Xval,ytrain,yval = model_selection.train_test_split(X,y,test_size=0.4)
+Xtrain,Xval,ytrain,yval = model_selection.train_test_split(X,y,test_size=0.25)
 
 Test = pd.read_csv('Xtest.csv')
 Xtest = Test[summary]
-
 #%%
-
-from sklearn import preprocessing
-scaler = preprocessing.StandardScaler().fit(Xtrain)
-Xtrain_norm = scaler.transform(Xtrain)
-Xval_norm = scaler.transform(Xval)
-Xtest_norm = scaler.transform(Xtest)
-
-from tpot import TPOTRegressor
-
-
-print(Xtrain.shape)
-print(ytrain.shape)
-pipeline_optimizer = TPOTRegressor(max_time_mins = 120)
-pipeline_optimizer.fit(Xtrain, ytrain)
-print(pipeline_optimizer.score(Xtrain, ytrain))
-pipeline_optimizer.export('tpot_exported_pipeline2.py')
-
+model_m = Sequential()
+model_m.add(Conv1D(100, 10, activation='relu', input_shape=())
+model_m.add(Conv1D(100, 10, activation='relu'))
+model_m.add(MaxPooling1D(3))
+model_m.add(Conv1D(160, 10, activation='relu'))
+model_m.add(Conv1D(160, 10, activation='relu'))
+model_m.add(GlobalAveragePooling1D())
+model_m.add(Dropout(0.5))
+model_m.add(Dense(num_classes, activation='softmax'))
+print(model_m.summary())
 #%%
-from sklearn.preprocessing import StandardScaler
-exported_pipeline = make_pipeline(
-    StandardScaler(),
-    RandomForestRegressor(bootstrap=True, max_features=0.15000000000000002, min_samples_leaf=19, min_samples_split=8, n_estimators=100)
-)
-exported_pipeline.fit(Xtrain, ytrain)
-results = exported_pipeline.predict(Xtest)
-
-submission = pd.DataFrame(index=Test.index,columns=['seg_id','time_to_failure'])
-submission['seg_id'] = Test['seg_id'].values
-submission['time_to_failure'] = results
-submission.to_csv('submission.csv',index=False)
-print('submission done')
