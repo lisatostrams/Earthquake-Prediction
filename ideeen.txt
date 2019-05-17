@@ -5,3 +5,9 @@
 	losse TPOT
 	best model selection?
 	train/test-split... misschien test set kleiner maken? Meer trainingssamples
+
+Overfit:
+XGB (van depth 3 naar 2)
+LGBM (van 5000 estimators naar 3000)
+RF (Train error for RF is: 0.7614, Test error for RF is: 2.0879)
+rest harder trainen?

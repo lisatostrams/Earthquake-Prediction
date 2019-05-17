@@ -5,6 +5,19 @@ Created on Wed Apr 17 12:05:09 2019
 @author: Lisa
 """
 
+dtc_attributes = ['q05_roll_std_10', 'q05_roll_std_100']
+rf_attributes = ['q05_roll_std_100','q05_roll_std_10', 'q01_roll_std_100', 'q01_roll_std_10', 'q05_roll_std_1000',
+                 'autocorr_5', 'q95_roll_std_10', 'mean_change_rate', 'std_roll_mean_1000', 'autocorr_50', 'avg_last_50000',
+                 'std_roll_mean_100', 'exp_Moving_average_30000_mean', 'Rstd', 'q99_roll_mean_10', 'av_change_abs_roll_mean_1000',
+                 'classic_sta_lta8_mean', 'avg_first_50000', 'q01_roll_mean_1000', 'autocorr_5000', 'avg_first_10000',
+                 'av_change_abs_roll_std_10', 'mean_change_rate_first_50000', 'q01_roll_mean_10', 'classic_sta_lta6_mean',
+                 'classic_sta_lta1_mean', 'max_roll_std_100', 'avg_last_10000', 'skew', 'q99_roll_mean_1000', 'q95',
+                 'q99_roll_mean_100', 'min_roll_mean_100', 'MA_400MA_BB_high_mean', 'max_to_min_diff', 'stdAudioIncrease']
+ridge_attributes = ['abs_mean', 'q05_roll_std_100', 'std_roll_std_100', 'abs_std', 'Hilbert_mean', 'gmean', 'q01_roll_std_100', 'autocorr_10', 'mean_change_rate_first_10000', 'mean_change_rate', 'q05_roll_std_10', 'hmean', 'mean_change_rate_first_50000', 'q01_roll_std_10', 'autocorr_50', 'mean_change_rate_last_50000', 'autocorr_100', 'q05_roll_mean_100', 'classic_sta_lta5_mean', 'q95_roll_std_10', 'stdAudioIncrease', 'std_roll_mean_100', 'q95_roll_mean_100', 'q05_roll_mean_10', 'autocorr_5', 'mad', 'q95_roll_mean_1000', 'autocorr_1', 'mean_change_rate_last_10000', 'q01_roll_mean_1000', 'q99_roll_mean_100', 'min_roll_std_100', 'MA_400MA_BB_low_mean', 'MA_400MA_BB_high_mean', 'avg_first_50000', 'q95_roll_std_100', 'std_roll_std_10']
+knn_attributes = ['abs_mean', 'q05_roll_std_100']
+svr_attributes = ['abs_mean', 'q05_roll_std_100', 'std_roll_std_100', 'abs_std', 'Hilbert_mean', 'gmean', 'q01_roll_std_100', 'autocorr_10', 'mean_change_rate_first_10000', 'mean_change_rate', 'q05_roll_std_10', 'hmean', 'mean_change_rate_first_50000', 'q01_roll_std_10', 'autocorr_50', 'mean_change_rate_last_50000', 'autocorr_100', 'q05_roll_mean_100', 'classic_sta_lta5_mean', 'q95_roll_std_10', 'stdAudioIncrease', 'std_roll_mean_100', 'q95_roll_mean_100', 'q05_roll_mean_10', 'autocorr_5', 'mad', 'q95_roll_mean_1000', 'autocorr_1', 'mean_change_rate_last_10000', 'q01_roll_mean_1000', 'q99_roll_mean_100', 'min_roll_std_100', 'MA_400MA_BB_low_mean', 'MA_400MA_BB_high_mean', 'avg_first_50000', 'q95_roll_std_100', 'std_roll_std_10', 'q95_roll_mean_10', 'classic_sta_lta1_mean', 'avg_last_50000', 'ave_roll_std_100', 'q05_roll_std_1000', 'q01_roll_mean_100', 'classic_sta_lta4_mean', 'q99_roll_mean_1000', 'autocorr_10000', 'MA_1000MA_std_mean', 'ave_roll_std_1000', 'exp_Moving_average_30000_mean', 'std_roll_mean_10', 'classic_sta_lta6_mean', 'abs_q05', 'ave_roll_std_10', 'max_to_min', 'q05_roll_mean_1000', 'medianAudio', 'q25Audio', 'MA_700MA_BB_high_mean', 'classic_sta_lta3_mean', 'q99_roll_mean_10', 'MA_700MA_BB_low_mean', 'q75Audio', 'min_roll_std_10', 'MA_400MA_std_mean', 'skew', 'ave10', 'classic_sta_lta7_mean', 'q01_roll_mean_10', 'autocorr_500', 'autocorr_1000', 'min_roll_std_1000', 'autocorr_5000', 'classic_sta_lta2_mean', 'Kalman_correction', 'q01_roll_std_1000', 'avg_first_10000', 'modeAudio', 'MA_700MA_std_mean', 'iqr1', 'std_roll_std_1000', 'classic_sta_lta8_mean', 'stdAudio', 'Hann_window_mean_15000', 'q95', 'q001', 'max_roll_mean_100', 'q99_roll_std_10', 'avg_last_10000', 'q95_roll_std_1000', 'abs_q95', 'std_last_10000', 'q99_roll_std_100', 'q99', 'min_roll_mean_100', 'std_first_10000', 'std_last_50000']
+general_attributes = ['av_change_abs_roll_std_100', 'classic_sta_lta1_mean', 'av_change_abs_roll_std_1000', 'classic_sta_lta7_mean', 'abs_trend', 'classic_sta_lta4_mean', 'std_last_10000', 'mean_change_rate_first_10000', 'kurt', 'classic_sta_lta3_mean', 'max_last_50000', 'classic_sta_lta8_mean', 'autocorr_5', 'mean_change_rate', 'min_roll_mean_100', 'Rmin_last_5000', 'min_roll_std_1000', 'stdAudioIncrease', 'min_last_10000', 'max_roll_std_100', 'autocorr_50', 'Rmax_last_5000', 'mean_change_rate_first_50000', 'autocorr_500', 'autocorr_10000', 'classic_sta_lta2_mean', 'std_roll_mean_100', 'max_roll_std_1000', 'av_change_abs_roll_mean_10', 'min_roll_std_100', 'q99_roll_mean_1000', 'Imean', 'av_change_rate_roll_mean_10', 'std_roll_mean_1000', 'autocorr_100', 'av_change_rate_roll_std_1000', 'autocorr_10', 'Rstd__last_5000', 'avg_last_10000', 'autocorr_1000', 'abs_max_roll_std_1000', 'hmean', 'q01_roll_std_1000', 'abs_max_roll_mean_10', 'mean_change_rate_last_50000', 'autocorr_5000', 'abs_max_roll_mean_1000', 'ave_roll_mean_100', 'max_roll_mean_100', 'avg_first_50000', 'mean_change_rate_last_10000', 'classic_sta_lta6_mean', 'q99_roll_std_1000', 'min_last_50000', 'Rmean', 'min_roll_std_10', 'q95_roll_std_1000', 'iqr', 'abs_std', 'max_roll_mean_10', 'Rmean_last_15000', 'q01_roll_mean_1000', 'mean_change_abs', 'abs_max_roll_std_100', 'max_first_10000', 'MA_700MA_BB_high_mean', 'q05_roll_std_100', 'max_first_50000', 'av_change_rate_roll_mean_100', 'std_roll_std_10', 'exp_Moving_average_3000_mean', 'abs_max_roll_std_10', 'Hann_window_mean_50', 'q95_roll_mean_10', 'Rmin_last_15000', 'av_change_abs_roll_std_10', 'min_roll_mean_1000', 'max_to_min', 'q99_roll_mean_100', 'min_roll_mean_10', 'trend', 'q95_roll_std_100', 'avg_last_50000', 'q01_roll_std_100', 'std_first_10000', 'av_change_abs_roll_mean_1000', 'skew', 'q99', 'Hilbert_mean', 'Rmean_last_5000', 'minAudio', 'MA_700MA_BB_low_mean', 'q95_roll_mean_1000', 'av_change_rate_roll_std_10', 'q01_roll_mean_100', 'av_change_abs_roll_mean_100', 'q99_roll_std_10', 'classic_sta_lta5_mean', 'q99_roll_mean_10', 'q05_roll_mean_1000', 'Hann_window_mean_150', 'ave_roll_mean_10', 'abs_q99', 'av_change_rate_roll_std_100', 'min_first_10000', 'exp_Moving_average_300_mean', 'q001', 'Kalman_correction', 'std_last_50000', 'abs_mean', 'q01_roll_std_10', 'gmean', 'iqr1', 'ave10', 'sum', 'q05_roll_std_10', 'q05_roll_mean_10', 'q01_roll_mean_10', 'q05_roll_std_1000', 'q75Audio', 'q25Audio', 'abs_max_roll_mean_100', 'q01', 'q95', 'q05', 'q95_roll_std_10', 'abs_q95', 'ave_roll_std_10', 'stdAudio', 'ave_roll_std_100']
+
 #%%
 
 import pandas as pd
@@ -103,28 +116,33 @@ yval_est = np.zeros((len(Xval),len(classifiers)))
 print("processing classifiers")
 
 dtc = tree.DecisionTreeRegressor(max_depth=max_depth) #train decision tree
-dtc = dtc.fit(Xtrain,ytrain)
-predictions[:,0] = dtc.predict(Xtest)
-ytrain_est[:,0] = dtc.predict(Xtrain)
-yval_est[:,0] = dtc.predict(Xval)
+dtc = dtc.fit(Xtrain[dtc_attributes],ytrain)
+predictions[:,0] = dtc.predict(Xtest[dtc_attributes])
+ytrain_est[:,0] = dtc.predict(Xtrain[dtc_attributes])
+yval_est[:,0] = dtc.predict(Xval[dtc_attributes])
 
 rf = RandomForestRegressor(n_estimators = n_estimators)
-rf = rf.fit(Xtrain, ytrain)
-predictions[:,1] = rf.predict(Xtest)
-ytrain_est[:,1] = rf.predict(Xtrain)
-yval_est[:,1] = rf.predict(Xval)
+rf = rf.fit(Xtrain[rf_attributes], ytrain)
+predictions[:,1] = rf.predict(Xtest[rf_attributes])
+ytrain_est[:,1] = rf.predict(Xtrain[rf_attributes])
+yval_est[:,1] = rf.predict(Xval[rf_attributes])
 
 reg = Ridge(alpha = 2)
-reg = reg.fit(Xtrain, ytrain)
-predictions[:,2] = reg.predict(Xtest)
-ytrain_est[:,2] = reg.predict(Xtrain)
-yval_est[:,2] = reg.predict(Xval)
+reg = reg.fit(Xtrain[ridge_attributes], ytrain)
+predictions[:,2] = reg.predict(Xtest[ridge_attributes])
+ytrain_est[:,2] = reg.predict(Xtrain[ridge_attributes])
+yval_est[:,2] = reg.predict(Xval[ridge_attributes])
 
 knn = KNeighborsRegressor(n_neighbors=45,algorithm='ball_tree')
-knn = knn.fit(Xtrain,ytrain)
-predictions[:,3] = knn.predict(Xtest)
-ytrain_est[:,3] = knn.predict(Xtrain)
-yval_est[:,3] = knn.predict(Xval)
+knn = knn.fit(Xtrain[knn_attributes],ytrain)
+predictions[:,3] = knn.predict(Xtest[knn_attributes])
+ytrain_est[:,3] = knn.predict(Xtrain[knn_attributes])
+yval_est[:,3] = knn.predict(Xval[knn_attributes])
+
+scaler = preprocessing.StandardScaler().fit(Xtrain[svr_attributes])
+Xtrain_norm = scaler.transform(Xtrain[svr_attributes])
+Xval_norm = scaler.transform(Xval[svr_attributes])
+Xtest_norm = scaler.transform(Xtest[svr_attributes])
 
 svmnorm = SVR(tol=tol,gamma='auto')
 svmnorm = svmnorm.fit(Xtrain_norm, ytrain)
@@ -163,36 +181,40 @@ xgb_params = {
     'colsample_bytree':0.7,
     'min_child_weight': 300
 }
+scaler = preprocessing.StandardScaler().fit(Xtrain[general_attributes])
+Xtrain_norm = scaler.transform(Xtrain[general_attributes])
+Xval_norm = scaler.transform(Xval[general_attributes])
+Xtest_norm = scaler.transform(Xtest[general_attributes])
 
-d_train = xgb.DMatrix(data=Xtrain_norm, label=ytrain, feature_names=Xtrain.columns)
-d_val = xgb.DMatrix(data=Xval_norm, label=yval, feature_names=Xval.columns)
+d_train = xgb.DMatrix(data=Xtrain_norm, label=ytrain, feature_names=Xtrain[general_attributes].columns)
+d_val = xgb.DMatrix(data=Xval_norm, label=yval, feature_names=Xval[general_attributes].columns)
 evallist = [(d_val, 'eval'), (d_train, 'train')]
 model = xgb.train(dtrain=d_train, num_boost_round=100, evals=evallist, early_stopping_rounds=10,  params=xgb_params)
-predictions[:,8] = model.predict(xgb.DMatrix(data=Xtest_norm, feature_names=Xtest.columns), ntree_limit=model.best_ntree_limit)
+predictions[:,8] = model.predict(xgb.DMatrix(data=Xtest_norm, feature_names=Xtest[general_attributes].columns), ntree_limit=model.best_ntree_limit)
 ytrain_est[:,8] = model.predict(d_train, ntree_limit=model.best_ntree_limit)
 yval_est[:,8] = model.predict(d_val, ntree_limit=model.best_ntree_limit)
 
 # train the model
 
 abc = AdaBoostRegressor()
-abc = abc.fit(Xtrain,ytrain)
-predictions[:,9] = abc.predict(Xtest)
-ytrain_est[:,9] = abc.predict(Xtrain)
-yval_est[:,9] = abc.predict(Xval)
+abc = abc.fit(Xtrain[general_attributes],ytrain)
+predictions[:,9] = abc.predict(Xtest[general_attributes])
+ytrain_est[:,9] = abc.predict(Xtrain[general_attributes])
+yval_est[:,9] = abc.predict(Xval[general_attributes])
 #%%
 Cat = CatBoostRegressor(iterations=600,
                            depth=1,
                            learning_rate=0.1,
                            loss_function= 'RMSE'
                            )
-Cat.fit(Xtrain, ytrain)
-predictions[:,10] = Cat.predict(Xtest)
-ytrain_est[:,10] = Cat.predict(Xtrain)
-yval_est[:,10] = Cat.predict(Xval)
+Cat.fit(Xtrain[general_attributes], ytrain)
+predictions[:,10] = Cat.predict(Xtest[general_attributes])
+ytrain_est[:,10] = Cat.predict(Xtrain[general_attributes])
+yval_est[:,10] = Cat.predict(Xval[general_attributes])
 
 #%%
-lgb_train = lgb.Dataset(Xtrain, ytrain)
-lgb_eval = lgb.Dataset(Xval, yval, reference=lgb_train)
+lgb_train = lgb.Dataset(Xtrain[general_attributes], ytrain)
+lgb_eval = lgb.Dataset(Xval[general_attributes], yval, reference=lgb_train)
 params = {
     'boosting_type': 'gbdt',
     'objective': 'regression',
@@ -217,9 +239,9 @@ print('Saving model...')
 gbm.save_model('model.txt')
 print('Starting prediction...')
 # predict
-predictions[:,11] = gbm.predict(Xtest, num_iteration=gbm.best_iteration)
-ytrain_est[:,11] = gbm.predict(Xtrain, num_iteration=gbm.best_iteration)
-yval_est[:,11] = gbm.predict(Xval, num_iteration = gbm.best_iteration)
+predictions[:,11] = gbm.predict(Xtest[general_attributes], num_iteration=gbm.best_iteration)
+ytrain_est[:,11] = gbm.predict(Xtrain[general_attributes], num_iteration=gbm.best_iteration)
+yval_est[:,11] = gbm.predict(Xval[general_attributes], num_iteration = gbm.best_iteration)
 
 '''kernel = np.var(y)* RBF(length_scale=1)
 gp = GaussianProcessRegressor(kernel=kernel,alpha=0.1).fit(Xtrain_norm, ytrain)
@@ -229,11 +251,11 @@ yval_est[:,12] = gp.predict(Xval_norm)
 '''
 #%%
 Tp = ExtraTreesRegressor(bootstrap=True, max_features=0.55, min_samples_leaf=2, min_samples_split=15, n_estimators=100)
-Tp.fit(Xtrain, ytrain)
-print(Tp.score(Xval, yval))
-predictions[:,12] = Tp.predict(Xtest)
-ytrain_est[:,12] = Tp.predict(Xtrain)
-yval_est[:,12] = Tp.predict(Xval)
+Tp.fit(Xtrain[general_attributes], ytrain)
+print(Tp.score(Xval[general_attributes], yval))
+predictions[:,12] = Tp.predict(Xtest[general_attributes])
+ytrain_est[:,12] = Tp.predict(Xtrain[general_attributes])
+yval_est[:,12] = Tp.predict(Xval[general_attributes])
 #%%
 
 #mapFeat = dict(zip(["f"+str(i) for i in range(len(features))],features))
@@ -322,17 +344,15 @@ accuracy = []
 models_sse = []
 sse = []
 score_i = []
-for i in range(1,50):
+for i in range(1,40):
     model_j = []
     score_j = []
     sse_j = []
     for j in range(0,15):
-        clf = MLPRegressor(solver='lbfgs',hidden_layer_sizes=(i,(i)))
-        clf.fit(yval_est, yval)
+        clf = MLPRegressor(solver='lbfgs',hidden_layer_sizes=(i))
+        predictie = clf.fit(yval_est, yval)
         model_j.append(clf)
         score_j.append(np.mean(abs(clf.predict(yval_est) - yval)))
-        
-    
     print("Layer {} test accuracy: {:.4f}".format(i,min(score_j)))
     
     models.append(model_j[np.argmin(score_j)])
@@ -344,8 +364,16 @@ print('Best number of hlayers test acc = {}'.format(model_acc+1))
 
 clf = models[model_acc]
 y_est = clf.predict(predictions)
+
+estimatie = clf.predict(ytrain_est)
+verschil = np.mean(abs(clf.predict(ytrain_est) - ytrain))
+print("verschil = ", verschil)
+verschil = np.mean(abs(clf.predict(yval_est) - yval))
+print("validatie verschil = ", verschil)
+print("max verschil =", np.max(abs((clf.predict(yval_est) - yval))))
 print(min(y_est))
-y_est[y_est<0] = 0
+print(max(y_est))
+y_est[y_est<=0] = 0
 #%%
 
 print("making submission")
