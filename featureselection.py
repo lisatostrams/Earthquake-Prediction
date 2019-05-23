@@ -62,9 +62,12 @@ print(*['{}: {:.4f}'.format(i[0],i[1]) for i in attributes_sorted],sep='\n')
 err=[]
 for t in levels:
     attributes = [i[0] for i in attributes_sorted][:t]
+    
     scaler = preprocessing.StandardScaler().fit(Xtrain[attributes])
     Xtrain_norm = scaler.transform(Xtrain[attributes])
     Xval_norm = scaler.transform(Xval[attributes])
+    
+    
     d_train = xgb.DMatrix(data=Xtrain_norm, label=ytrain, feature_names=Xtrain[attributes].columns)
     d_val = xgb.DMatrix(data=Xval_norm, label=yval, feature_names=Xval[attributes].columns)
     evallist = [(d_val, 'eval')]
