@@ -334,13 +334,6 @@ def use_mlp():
     
     clf = models[model_acc]
     y_est = clf.predict(predictions)
-    
-    estimatie = clf.predict(ytrain_est)
-    verschil = np.mean(abs(clf.predict(ytrain_est) - ytrain))
-    print("verschil = ", verschil)
-    verschil = np.mean(abs(clf.predict(yval_est) - yval))
-    print("validatie verschil = ", verschil)
-    print("max verschil =", np.max(abs((clf.predict(yval_est) - yval))))
     y_est[y_est<=0] = 0
     return y_est, clf
 #%%
@@ -378,7 +371,7 @@ else:
     print("using tpot")
     y_est, regressor = useTpotAsMLP()
     
-printStuff()    
+printStuff()
 print("making submission")
 submission = pd.DataFrame(index=Test.index,columns=['seg_id','time_to_failure'])
 submission['seg_id'] = Test['seg_id'].values
