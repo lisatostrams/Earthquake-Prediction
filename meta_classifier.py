@@ -35,6 +35,7 @@ from tpot.builtins import StackingEstimator
 from sklearn.preprocessing import FunctionTransformer
 from copy import copy
 from catboost import CatBoostRegressor, Pool
+from sklearn.feature_selection import SelectPercentile, f_regression
 
 #use certain attributes only for dtc, rf, ridge,knn, svr and general:
 
@@ -102,162 +103,219 @@ scaler = preprocessing.StandardScaler().fit(Xtrain)
 Xtrain_norm = scaler.transform(Xtrain)
 Xval_norm = scaler.transform(Xval)
 Xtest_norm = scaler.transform(Xtest)
+ytrain_est = []
+yval_est = []
+predictions = []
 
+classifiers = 'DTC RF REG KNN SVM SVMlinear BRR HR XGB CAT ADA LGBM'.split(sep=' ')
 #%% train all classifiers
+def train_classifiers():
 
-max_depth = 3
-n_estimators = 50
-tol = 0.1
-        
-classifiers = 'DTC RF REG KNN SVM SVMlinear BRR HR XGB CAT ADA LGBM GP TPOT'.split(sep=' ')
-predictions = np.zeros((len(Xtest),len(classifiers)))
-ytrain_est = np.zeros((len(Xtrain),len(classifiers)))
-yval_est = np.zeros((len(Xval),len(classifiers)))
-
-
-dtc = tree.DecisionTreeRegressor(max_depth=max_depth) #train decision tree
-dtc = dtc.fit(Xtrain[dtc_attributes],ytrain)
-predictions[:,0] = dtc.predict(Xtest[dtc_attributes])
-ytrain_est[:,0] = dtc.predict(Xtrain[dtc_attributes])
-yval_est[:,0] = dtc.predict(Xval[dtc_attributes])
-
-rf = RandomForestRegressor(n_estimators = n_estimators)
-rf = rf.fit(Xtrain[rf_attributes], ytrain)
-predictions[:,1] = rf.predict(Xtest[rf_attributes])
-ytrain_est[:,1] = rf.predict(Xtrain[rf_attributes])
-yval_est[:,1] = rf.predict(Xval[rf_attributes])
-
-reg = Ridge(alpha = 2)
-reg = reg.fit(Xtrain[ridge_attributes], ytrain)
-predictions[:,2] = reg.predict(Xtest[ridge_attributes])
-ytrain_est[:,2] = reg.predict(Xtrain[ridge_attributes])
-yval_est[:,2] = reg.predict(Xval[ridge_attributes])
-
-knn = KNeighborsRegressor(n_neighbors=45,algorithm='ball_tree')
-knn = knn.fit(Xtrain[knn_attributes],ytrain)
-predictions[:,3] = knn.predict(Xtest[knn_attributes])
-ytrain_est[:,3] = knn.predict(Xtrain[knn_attributes])
-yval_est[:,3] = knn.predict(Xval[knn_attributes])
-
-scaler = preprocessing.StandardScaler().fit(Xtrain[svr_attributes])
-Xtrain_norm = scaler.transform(Xtrain[svr_attributes])
-Xval_norm = scaler.transform(Xval[svr_attributes])
-Xtest_norm = scaler.transform(Xtest[svr_attributes])
-
-svmnorm = SVR(tol=tol,gamma='auto')
-svmnorm = svmnorm.fit(Xtrain_norm, ytrain)
-predictions[:,4] = svmnorm.predict(Xtest_norm)
-ytrain_est[:,4] = svmnorm.predict(Xtrain_norm)
-yval_est[:,4] = svmnorm.predict(Xval_norm)
-
-svmlnorm = LinearSVR(max_iter=10000)
-svmlnorm = svmlnorm.fit(Xtrain_norm,ytrain)
-predictions[:,5] = svmlnorm.predict(Xtest_norm)
-ytrain_est[:,5] = svmlnorm.predict(Xtrain_norm)
-yval_est[:,5] = svmlnorm.predict(Xval_norm)
-
-print("processing classifiers, half way")
-
-
-gnb = BayesianRidge()
-gnb = gnb.fit(Xtrain_norm, ytrain)
-predictions[:,6] = gnb.predict(Xtest_norm)
-ytrain_est[:,6] = gnb.predict(Xtrain_norm)
-yval_est[:,6] = gnb.predict(Xval_norm)
-
-hr = HuberRegressor()
-hr = hr.fit(Xtrain_norm, ytrain)
-predictions[:,7] = hr.predict(Xtest_norm)
-ytrain_est[:,7] = hr.predict(Xtrain_norm)
-yval_est[:,7] = hr.predict(Xval_norm)
-
-xgb_params = {
-    'eval_metric': 'rmse',
-    'seed': 1337,
-    'verbosity': 0,
-    'max_depth':1,
-    'n_estimators': 300,
-    'gamma': 1,
-    'colsample_bytree':0.7,
-    'min_child_weight': 300
-}
-scaler = preprocessing.StandardScaler().fit(Xtrain[general_attributes])
-Xtrain_norm = scaler.transform(Xtrain[general_attributes])
-Xval_norm = scaler.transform(Xval[general_attributes])
-Xtest_norm = scaler.transform(Xtest[general_attributes])
-
-d_train = xgb.DMatrix(data=Xtrain_norm, label=ytrain, feature_names=Xtrain[general_attributes].columns)
-d_val = xgb.DMatrix(data=Xval_norm, label=yval, feature_names=Xval[general_attributes].columns)
-evallist = [(d_val, 'eval'), (d_train, 'train')]
-model = xgb.train(dtrain=d_train, num_boost_round=100, evals=evallist, early_stopping_rounds=10,  params=xgb_params)
-predictions[:,8] = model.predict(xgb.DMatrix(data=Xtest_norm, feature_names=Xtest[general_attributes].columns), ntree_limit=model.best_ntree_limit)
-ytrain_est[:,8] = model.predict(d_train, ntree_limit=model.best_ntree_limit)
-yval_est[:,8] = model.predict(d_val, ntree_limit=model.best_ntree_limit)
-
-
-abc = AdaBoostRegressor()
-abc = abc.fit(Xtrain[general_attributes],ytrain)
-predictions[:,9] = abc.predict(Xtest[general_attributes])
-ytrain_est[:,9] = abc.predict(Xtrain[general_attributes])
-yval_est[:,9] = abc.predict(Xval[general_attributes])
-
-Cat = CatBoostRegressor(iterations=600,
-                           depth=1,
-                           learning_rate=0.1,
-                           loss_function= 'RMSE'
-                           )
-Cat.fit(Xtrain[general_attributes], ytrain)
-predictions[:,10] = Cat.predict(Xtest[general_attributes])
-ytrain_est[:,10] = Cat.predict(Xtrain[general_attributes])
-yval_est[:,10] = Cat.predict(Xval[general_attributes])
-
-lgb_train = lgb.Dataset(Xtrain[general_attributes], ytrain)
-lgb_eval = lgb.Dataset(Xval[general_attributes], yval, reference=lgb_train)
-params = {
-    'boosting_type': 'gbdt',
-    'objective': 'regression',
-    'metric': {'l2', 'l1'},
-    'num_leaves': 31,
-    'max_depth' : 3,
-    'learning_rate': 0.05,
-    'feature_fraction': 0.9,
-    'bagging_fraction': 0.8,
-    'bagging_freq': 5,
-    'verbose': 0
-}
-print("train lgb")
-gbm = lgb.train(params,
-                lgb_train,
-                num_boost_round=3000,
-                valid_sets=lgb_eval,
-                early_stopping_rounds=10)
-
-print('Saving model...')
-# save model to file
-gbm.save_model('model.txt')
-# predict
-predictions[:,11] = gbm.predict(Xtest[general_attributes], num_iteration=gbm.best_iteration)
-ytrain_est[:,11] = gbm.predict(Xtrain[general_attributes], num_iteration=gbm.best_iteration)
-yval_est[:,11] = gbm.predict(Xval[general_attributes], num_iteration = gbm.best_iteration)
-
-kernel = np.var(y)* RBF(length_scale=1)
-gp = GaussianProcessRegressor(kernel=kernel,alpha=0.1).fit(Xtrain_norm, ytrain)
-predictions[:,12] = gp.predict(Xtest_norm)
-ytrain_est[:,12] = gp.predict(Xtrain_norm)
-yval_est[:,12] = gp.predict(Xval_norm)
+    max_depth = 3
+    n_estimators = 50
+    tol = 0.1
+            
+    predictions = np.zeros((len(Xtest),len(classifiers)))
+    ytrain_est = np.zeros((len(Xtrain),len(classifiers)))
+    yval_est = np.zeros((len(Xval),len(classifiers)))
+    
+    
+    dtc = tree.DecisionTreeRegressor(max_depth=max_depth) #train decision tree
+    dtc = dtc.fit(Xtrain[dtc_attributes],ytrain)
+    predictions[:,0] = dtc.predict(Xtest[dtc_attributes])
+    ytrain_est[:,0] = dtc.predict(Xtrain[dtc_attributes])
+    yval_est[:,0] = dtc.predict(Xval[dtc_attributes])
+    
+    rf = RandomForestRegressor(n_estimators = n_estimators)
+    rf = rf.fit(Xtrain[rf_attributes], ytrain)
+    predictions[:,1] = rf.predict(Xtest[rf_attributes])
+    ytrain_est[:,1] = rf.predict(Xtrain[rf_attributes])
+    yval_est[:,1] = rf.predict(Xval[rf_attributes])
+    
+    reg = Ridge(alpha = 2)
+    reg = reg.fit(Xtrain[ridge_attributes], ytrain)
+    predictions[:,2] = reg.predict(Xtest[ridge_attributes])
+    ytrain_est[:,2] = reg.predict(Xtrain[ridge_attributes])
+    yval_est[:,2] = reg.predict(Xval[ridge_attributes])
+    
+    knn = KNeighborsRegressor(n_neighbors=45,algorithm='ball_tree')
+    knn = knn.fit(Xtrain[knn_attributes],ytrain)
+    predictions[:,3] = knn.predict(Xtest[knn_attributes])
+    ytrain_est[:,3] = knn.predict(Xtrain[knn_attributes])
+    yval_est[:,3] = knn.predict(Xval[knn_attributes])
+    
+    scaler = preprocessing.StandardScaler().fit(Xtrain[svr_attributes])
+    Xtrain_norm = scaler.transform(Xtrain[svr_attributes])
+    Xval_norm = scaler.transform(Xval[svr_attributes])
+    Xtest_norm = scaler.transform(Xtest[svr_attributes])
+    
+    svmnorm = SVR(tol=tol,gamma='auto')
+    svmnorm = svmnorm.fit(Xtrain_norm, ytrain)
+    predictions[:,4] = svmnorm.predict(Xtest_norm)
+    ytrain_est[:,4] = svmnorm.predict(Xtrain_norm)
+    yval_est[:,4] = svmnorm.predict(Xval_norm)
+    
+    svmlnorm = LinearSVR(max_iter=10000)
+    svmlnorm = svmlnorm.fit(Xtrain_norm,ytrain)
+    predictions[:,5] = svmlnorm.predict(Xtest_norm)
+    ytrain_est[:,5] = svmlnorm.predict(Xtrain_norm)
+    yval_est[:,5] = svmlnorm.predict(Xval_norm)
+    
+    print("processing classifiers, half way")
+    
+    
+    gnb = BayesianRidge()
+    gnb = gnb.fit(Xtrain_norm, ytrain)
+    predictions[:,6] = gnb.predict(Xtest_norm)
+    ytrain_est[:,6] = gnb.predict(Xtrain_norm)
+    yval_est[:,6] = gnb.predict(Xval_norm)
+    
+    hr = HuberRegressor()
+    hr = hr.fit(Xtrain_norm, ytrain)
+    predictions[:,7] = hr.predict(Xtest_norm)
+    ytrain_est[:,7] = hr.predict(Xtrain_norm)
+    yval_est[:,7] = hr.predict(Xval_norm)
+    
+    xgb_params = {
+        'eval_metric': 'rmse',
+        'seed': 1337,
+        'verbosity': 0,
+        'max_depth':1,
+        'n_estimators': 300,
+        'gamma': 1,
+        'colsample_bytree':0.7,
+        'min_child_weight': 300
+    }
+    scaler = preprocessing.StandardScaler().fit(Xtrain[general_attributes])
+    Xtrain_norm = scaler.transform(Xtrain[general_attributes])
+    Xval_norm = scaler.transform(Xval[general_attributes])
+    Xtest_norm = scaler.transform(Xtest[general_attributes])
+    
+    d_train = xgb.DMatrix(data=Xtrain_norm, label=ytrain, feature_names=Xtrain[general_attributes].columns)
+    d_val = xgb.DMatrix(data=Xval_norm, label=yval, feature_names=Xval[general_attributes].columns)
+    evallist = [(d_val, 'eval'), (d_train, 'train')]
+    model = xgb.train(dtrain=d_train, num_boost_round=100, evals=evallist, early_stopping_rounds=10,  params=xgb_params)
+    predictions[:,8] = model.predict(xgb.DMatrix(data=Xtest_norm, feature_names=Xtest[general_attributes].columns), ntree_limit=model.best_ntree_limit)
+    ytrain_est[:,8] = model.predict(d_train, ntree_limit=model.best_ntree_limit)
+    yval_est[:,8] = model.predict(d_val, ntree_limit=model.best_ntree_limit)
+    
+    
+    abc = AdaBoostRegressor()
+    abc = abc.fit(Xtrain[general_attributes],ytrain)
+    predictions[:,9] = abc.predict(Xtest[general_attributes])
+    ytrain_est[:,9] = abc.predict(Xtrain[general_attributes])
+    yval_est[:,9] = abc.predict(Xval[general_attributes])
+    
+    Cat = CatBoostRegressor(iterations=600,
+                               depth=1,
+                               learning_rate=0.1,
+                               loss_function= 'RMSE'
+                               )
+    Cat.fit(Xtrain[general_attributes], ytrain)
+    predictions[:,10] = Cat.predict(Xtest[general_attributes])
+    ytrain_est[:,10] = Cat.predict(Xtrain[general_attributes])
+    yval_est[:,10] = Cat.predict(Xval[general_attributes])
+    
+    lgb_train = lgb.Dataset(Xtrain[general_attributes], ytrain)
+    lgb_eval = lgb.Dataset(Xval[general_attributes], yval, reference=lgb_train)
+    params = {
+        'boosting_type': 'gbdt',
+        'objective': 'regression',
+        'metric': {'l2', 'l1'},
+        'num_leaves': 31,
+        'max_depth' : 3,
+        'learning_rate': 0.05,
+        'feature_fraction': 0.9,
+        'bagging_fraction': 0.8,
+        'bagging_freq': 5,
+        'verbose': 0
+    }
+    print("train lgb")
+    gbm = lgb.train(params,
+                    lgb_train,
+                    num_boost_round=3000,
+                    valid_sets=lgb_eval,
+                    early_stopping_rounds=10)
+    
+    print('Saving model...')
+    # save model to file
+    gbm.save_model('model.txt')
+    # predict
+    predictions[:,11] = gbm.predict(Xtest[general_attributes], num_iteration=gbm.best_iteration)
+    ytrain_est[:,11] = gbm.predict(Xtrain[general_attributes], num_iteration=gbm.best_iteration)
+    yval_est[:,11] = gbm.predict(Xval[general_attributes], num_iteration = gbm.best_iteration)
+    
+    #kernel = np.var(y)* RBF(length_scale=1)
+    #gp = GaussianProcessRegressor(kernel=kernel,alpha=0.1).fit(Xtrain_norm, ytrain)
+    #predictions[:,-1] = gp.predict(Xtest_norm)
+    #ytrain_est[:,-1] = gp.predict(Xtrain_norm)
+    #yval_est[:,-1] = gp.predict(Xval_norm)
 
 #%%
 # Use the TPOT regressor
-def useTpotRegressor():
-    classifiers.add('Tpot')
-    Tp = ExtraTreesRegressor(bootstrap=True, max_features=0.55, min_samples_leaf=2, min_samples_split=15, n_estimators=100)
-    Tp.fit(Xtrain[general_attributes], ytrain)
-    print(Tp.score(Xval[general_attributes], yval))
-    predictions[:,13] = Tp.predict(Xtest[general_attributes])
-    ytrain_est[:,13] = Tp.predict(Xtrain[general_attributes])
-    yval_est[:,13] = Tp.predict(Xval[general_attributes])
+import datetime    
 
-def useTpotAsMLP():
+def test_tpot_performance(test_rounds):  
+    scores = []
+    current_score = 100
+    train_scores = []
+    classifiers.append('Tpot')
+    for i in range(test_rounds):
+        i+=1
+        print("round: ", i,"/",test_rounds)
+        print("start_time = " , datetime.datetime.now().time())
+        Tp = TPOTRegressor(max_time_mins =i*2)
+        Tp.fit(Xtrain, ytrain)
+        scores.append(np.mean(abs(Tp.predict(Xval)-yval)))
+        train_scores.append(np.mean((abs(Tp.predict(Xtrain)-ytrain))))
+        print(scores[-1])
+        if current_score < max(scores):
+            Tp.export('tpot_exported_pipeline.py')
+    plt.subplot(121)
+    plt.title('valuation scores')
+    plt.plot(scores)
+    plt.savefig('eval_scores.png')
+    plt.subplot(122)
+    plt.title('training scores')
+    plt.plot(train_scores)
+    plt.savefig('train_scores.png')
+    plt.show()
+    
+def test_tpot_MLP(test_rounds):
+    scores = []
+    current_score = 100
+    train_scores = []
+    classifiers.append('Tpot')
+    for i in range(test_rounds):
+        i+=1
+        print("round: ", i,"/",test_rounds)
+        print("start_time = " , datetime.datetime.now().time())
+        Tp = TPOTRegressor(max_time_mins =i*2)
+        Tp.fit(ytrain_est, ytrain)
+        scores.append(np.mean(abs(Tp.predict(yval_est)-yval)))
+        train_scores.append(np.mean((abs(Tp.predict(ytrain_est)-ytrain))))
+        if current_score < max(scores):
+            print("better tpot score")
+            Tp.export('tpot_exported_pipeline.py')
+        print(scores[-1])
+    plt.subplot(121)
+    plt.title('valuation scores')
+    plt.plot(scores)
+    plt.subplot(122)
+    plt.title('training scores')
+    plt.show()
+        
+    
+def use_tpot_regressor():
+    classifiers.append('Tpot')
+    Tp = ExtraTreesRegressor(bootstrap=True, max_features=0.55, min_samples_leaf=2, min_samples_split=15, n_estimators=100)
+    Tp.fit(Xtrain, ytrain)
+    print(Tp.score(Xval, yval))
+    predictions[:,-1] = Tp.predict(Xtest)
+    ytrain_est[:,-1] = Tp.predict(Xtrain)
+    yval_est[:,-1] = Tp.predict(Xval)
+
+def use_tpot_as_MLP():
     exported_pipeline = make_pipeline(
     make_union(
         FunctionTransformer(copy, validate=True),
@@ -279,30 +337,30 @@ def useTpotAsMLP():
 
 #%%
 # classify all loose predictors:
-
-mseval = np.zeros((len(yval),len(classifiers)))
-msetrain = np.zeros((len(ytrain),len(classifiers)))
-for i in range(len(classifiers)):
-    ytrain_est[ytrain_est[:,i]<0,i] = 0
-    yval_est[yval_est[:,i]<0,i] = 0
-    err = np.mean(abs(ytrain_est[:,i] - ytrain))
-    print('Train error for {} is: {:.4f}'.format(classifiers[i],err))
-    err = np.mean(abs(yval_est[:,i] - yval))
-    print('Test error for {} is: {:.4f}'.format(classifiers[i],err))
-    mseval[:,i] = abs(yval_est[:,i] - yval)
-    msetrain[:,i] = abs(ytrain_est[:,i] - ytrain)
-
-    if(min(predictions[:,i])<0):
-        predictions[predictions[:,i]<0,i] = 0
-    if(np.any(np.isnan(predictions[:,i]))):
-        print(classifiers[i])
-    if(np.all(np.isfinite(predictions[:,i]))==0):
-        print(classifiers[i])
-        
-msevaldf = pd.DataFrame(mseval)
-msetraindf = pd.DataFrame(msetrain)
-print('In total, by selecting the optimal classifier the training MSE is {:.2f}'.format(msetraindf.min(axis=1).mean()))
-print('In total, by selecting the optimal classifier the validation MSE is {:2f}'.format(msevaldf.min(axis=1).mean()))
+def classify_predictors():
+    mseval = np.zeros((len(yval),len(classifiers)))
+    msetrain = np.zeros((len(ytrain),len(classifiers)))
+    for i in range(len(classifiers)):
+        ytrain_est[ytrain_est[:,i]<0,i] = 0
+        yval_est[yval_est[:,i]<0,i] = 0
+        err = np.mean(abs(ytrain_est[:,i] - ytrain))
+        print('Train error for {} is: {:.4f}'.format(classifiers[i],err))
+        err = np.mean(abs(yval_est[:,i] - yval))
+        print('Test error for {} is: {:.4f}'.format(classifiers[i],err))
+        mseval[:,i] = abs(yval_est[:,i] - yval)
+        msetrain[:,i] = abs(ytrain_est[:,i] - ytrain)
+    
+        if(min(predictions[:,i])<0):
+            predictions[predictions[:,i]<0,i] = 0
+        if(np.any(np.isnan(predictions[:,i]))):
+            print(classifiers[i])
+        if(np.all(np.isfinite(predictions[:,i]))==0):
+            print(classifiers[i])
+            
+    msevaldf = pd.DataFrame(mseval)
+    msetraindf = pd.DataFrame(msetrain)
+    print('In total, by selecting the optimal classifier the training MSE is {:.2f}'.format(msetraindf.min(axis=1).mean()))
+    print('In total, by selecting the optimal classifier the validation MSE is {:2f}'.format(msevaldf.min(axis=1).mean()))
 
 
 #%%
@@ -362,14 +420,25 @@ def printStuff():
     
 #%%
 mlp = False
+test_tpot = True
+train_classifiers()
+tests=30
+#classify_predictors()
+if test_tpot:
+    test_tpot_performance(tests)
+    test_tpot_MLP(tests)
+else:
+    print("no testing today")
 
 if mlp:
     print("using mlp")
+    use_tpot_regressor()
     y_est, regressor = use_mlp()
     
-else:
-    print("using tpot")
-    y_est, regressor = useTpotAsMLP()
+#else:
+#    print("using tpot")
+#    use_tpot-regressor()
+#    y_est, regressor = use_tpot_as_MLP()
     
 printStuff()
 print("making submission")
