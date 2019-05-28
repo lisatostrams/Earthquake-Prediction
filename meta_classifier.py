@@ -95,7 +95,7 @@ X=X.replace([np.inf, -np.inf], np.nan)
 X=X.fillna(0)
 y=y.fillna(0)
 
-Xtrain,Xval,ytrain,yval = model_selection.train_test_split(X,y,test_size=0.3)
+Xtrain,Xval,ytrain,yval = model_selection.train_test_split(X,y,test_size=0.4)
 
 Test = pd.read_csv('Xtest.csv')
 Xtest = Test[summary]
@@ -198,7 +198,7 @@ ytrain_est[:,8] = model.predict(d_train, ntree_limit=model.best_ntree_limit)
 yval_est[:,8] = model.predict(d_val, ntree_limit=model.best_ntree_limit)
 
 print("ada fit")
-abc = AdaBoostRegressor(n_estimators = 8, learning_rate = 0.05)
+abc = AdaBoostRegressor(n_estimators = 16, learning_rate = 0.05)
 abc = abc.fit(Xtrain ,ytrain)
 predictions[:,9] = abc.predict(Xtest)
 ytrain_est[:,9] = abc.predict(Xtrain)
@@ -432,8 +432,41 @@ def printStuff():
 
     
 #%%
-
-mlp = True
+def testTpot():
+    max = []
+    train_max = []
+    index = []
+    index_j = []
+    for i in range(2,10,2):
+        for j in range(2,10,2):
+            print("i = ", i, " j = ", j)
+            Tp = TPOTRegressor(generations=i, population_size=j, cv=5, n_jobs=-1, verbosity =3)
+            Tp.fit(Xtrain, ytrain)
+            print("val score: ", np.mean(abs(Tp.predict(Xval)-yval)))
+            print("train_score: ", np.mean((abs(Tp.predict(Xtrain)-ytrain))))
+            max.append(np.mean(abs(Tp.predict(Xval)-yval)))
+            index.append(i)
+            index_j.append(j)
+            train_max.append(np.mean(abs(Tp.predict(Xval)-yval)))
+    plt.subplot(121)
+    plt.plot(index, max)
+    plt.subplot(122)
+    plt.plot(index_j, max)
+    plt.subplot(212)
+    plt.plot(index, train_max)
+    plt.subplot(222)
+    plt.plot(index_j, train_max)
+    plt.show()
+    predictions[:,12] = Tp.predict(Xtest)
+    ytrain_est[:,12] = Tp.predict(Xtrain)
+    yval_est[:,12] = Tp.predict(Xval)
+    
+        
+    
+    
+#%%
+testTpot()
+'''mlp = True
 test_tpot = True
 submit = True
 tests=20
@@ -456,4 +489,4 @@ if submit:
 
 else:
     print("done")
-
+'''
