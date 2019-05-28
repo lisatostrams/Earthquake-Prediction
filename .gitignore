@@ -1,2 +1,6 @@
 /data/*
 /Test/*
+aemodels/model_trained_chunk_0.h5
+.DS_Store
+aemodels/model_trained_chunk_1.h5
+.DS_Store
