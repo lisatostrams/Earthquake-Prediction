@@ -192,60 +192,64 @@ print("xgb fit")
 d_train = xgb.DMatrix(data=Xtrain_norm, label=ytrain, feature_names=Xtrain[general_attributes].columns)
 d_val = xgb.DMatrix(data=Xval_norm, label=yval, feature_names=Xval[general_attributes].columns)
 evallist = [(d_val, 'eval'), (d_train, 'train')]
-model = xgb.train(dtrain=d_train, num_boost_round=100, evals=evallist, early_stopping_rounds=10,  params=xgb_params)
+model = xgb.train(dtrain=d_train, num_boost_round=120, evals=evallist, early_stopping_rounds=10,  params=xgb_params)
 predictions[:,8] = model.predict(xgb.DMatrix(data=Xtest_norm, feature_names=Xtest[general_attributes].columns), ntree_limit=model.best_ntree_limit)
 ytrain_est[:,8] = model.predict(d_train, ntree_limit=model.best_ntree_limit)
 yval_est[:,8] = model.predict(d_val, ntree_limit=model.best_ntree_limit)
 
 print("ada fit")
-abc = AdaBoostRegressor(n_estimators = 50)
-abc = abc.fit(Xtrain[general_attributes],ytrain)
-predictions[:,9] = abc.predict(Xtest[general_attributes])
-ytrain_est[:,9] = abc.predict(Xtrain[general_attributes])
-yval_est[:,9] = abc.predict(Xval[general_attributes])
+abc = AdaBoostRegressor(n_estimators = 8, learning_rate = 0.05)
+abc = abc.fit(Xtrain ,ytrain)
+predictions[:,9] = abc.predict(Xtest)
+ytrain_est[:,9] = abc.predict(Xtrain)
+yval_est[:,9] = abc.predict(Xval)
+print("val score: ", np.mean(abs(abc.predict(Xval)-yval)))
+print("train_score: ", np.mean((abs(abc.predict(Xtrain)-ytrain))))
+
+
 print("cat fit")
-Cat = CatBoostRegressor(iterations=4000,
-                           depth=6,
-                           learning_rate=0.1,
-                           loss_function= 'RMSE',
-                           verbose =0
-                           
-                           )
-Cat.fit(Xtrain[general_attributes], ytrain)
-predictions[:,10] = Cat.predict(Xtest[general_attributes])
-ytrain_est[:,10] = Cat.predict(Xtrain[general_attributes])
-yval_est[:,10] = Cat.predict(Xval[general_attributes])
+Cat = CatBoostRegressor(n_estimators=25000, verbose=-1, objective="MAE", loss_function="MAE", boosting_type="Ordered")
+Cat.fit(Xtrain, 
+              ytrain, 
+              eval_set=[(Xval, yval)], 
+#               eval_metric='mae',
+              verbose=2500, 
+              early_stopping_rounds=500)
+predictions[:,10] = Cat.predict(Xtest)
+ytrain_est[:,10] = Cat.predict(Xtrain)
+yval_est[:,10] = Cat.predict(Xval)
 print("gbm fit")
-lgb_train = lgb.Dataset(Xtrain[general_attributes], ytrain)
-lgb_eval = lgb.Dataset(Xval[general_attributes], yval, reference=lgb_train)
-params = {'num_leaves': 128,
-          'min_child_samples': 79,
-          'objective': 'gamma',
-          'max_depth': -1,
-          'learning_rate': 0.01,
-          "boosting_type": "gbdt",
-          "subsample_freq": 5,
-          "subsample": 0.9,
-          "bagging_seed": 11,
-          "metric": 'mae',
-          "verbosity": -1,
-          'reg_alpha': 0.1302650970728192,
-          'reg_lambda': 0.3603427518866501,
-          'colsample_bytree': 0.2
-         }
+lgb_train = lgb.Dataset(Xtrain, ytrain)
+lgb_eval = lgb.Dataset(Xval, yval, reference=lgb_train)
+params = {'num_leaves': 51,
+         'min_data_in_leaf': 10, 
+         'objective':'regression',
+         'max_depth': -1,
+         'learning_rate': 0.001,
+         "boosting": "gbdt",
+         "feature_fraction": 0.91,
+         "bagging_freq": 1,
+         "bagging_fraction": 0.91,
+         "bagging_seed": 42,
+         "metric": 'mae',
+         "lambda_l1": 0.1,
+         "verbosity": -1,
+         "nthread": -1,
+         "random_state": 42}
 print("train lgb")
-gbm = lgb.train(params,
-                lgb_train,
-                valid_sets=lgb_eval)
+gbm = lgb.LGBMRegressor(**params, n_estimators = 20000, n_jobs = -1)
+gbm.fit(Xtrain, 
+          ytrain, 
+          eval_set=[(Xtrain, ytrain), (Xval, yval)], 
+          eval_metric='mae',
+          verbose=1000, 
+          early_stopping_rounds=500)
 
-print('Saving model...')
-# save model to file
-gbm.save_model('model.txt')
-# predict
-predictions[:,11] = gbm.predict(Xtest[general_attributes], num_iteration=gbm.best_iteration)
-ytrain_est[:,11] = gbm.predict(Xtrain[general_attributes], num_iteration=gbm.best_iteration)
-yval_est[:,11] = gbm.predict(Xval[general_attributes], num_iteration = gbm.best_iteration)
-
+predictions[:,11] = gbm.predict(Xtest)
+ytrain_est[:,11] = gbm.predict(Xtrain)
+yval_est[:,11] = gbm.predict(Xval)
+print("val score: ", np.mean(abs(gbm.predict(Xval)-yval)))
+print("train_score: ", np.mean((abs(gbm.predict(Xtrain)-ytrain))))
 #kernel = np.var(y)* RBF(length_scale=1)
 #gp = GaussianProcessRegressor(kernel=kernel,alpha=0.1).fit(Xtrain_norm, ytrain)
 #predictions[:,-1] = gp.predict(Xtest_norm)
@@ -260,7 +264,6 @@ ExtraTreesRegressor(bootstrap=True, max_features=1.0, min_samples_leaf=9, min_sa
 Tp.fit(Xtrain, ytrain)
 print("val score: ", np.mean(abs(Tp.predict(Xval)-yval)))
 print("train_score: ", np.mean((abs(Tp.predict(Xtrain)-ytrain))))
-print(Tp.score(Xval, yval)) 
 
 predictions[:,12] = Tp.predict(Xtest)
 ytrain_est[:,12] = Tp.predict(Xtrain)
@@ -305,7 +308,7 @@ def test_tpot_MLP(test_rounds):
     scores = []
     current_score = 100
     train_scores = []
-    classifiers.append('Tpot')
+    print("classifiers: ", classifiers)    
     for i in range(20, 100, 20):  
         print(i)
         Tp = TPOTRegressor(max_time_mins =i)
@@ -430,31 +433,27 @@ def printStuff():
     
 #%%
 
-mlp = False
+mlp = True
 test_tpot = True
-submit = False
-#use_tpot_regressor()
+submit = True
 tests=20
 if test_tpot:
-    test_tpot_performance(tests)
-    #test_tpot_MLP(tests)
+    #test_tpot_performance(tests)
+    test_tpot_MLP(tests)
 else:
     print("no testing today")
 
-if mlp:
-    print("using mlp")
-    y_est, regressor = use_mlp()
     
 if submit:
     print("using tpot")
-    classify_predictors()
     y_est, regressor = use_tpot_as_MLP()
+    printStuff()
+    print("making submission")
+    submission = pd.DataFrame(index=Test.index,columns=['seg_id','time_to_failure'])
+    submission['seg_id'] = Test['seg_id'].values
+    submission['time_to_failure'] = y_est
+    submission.to_csv('submission.csv',index=False)
+
 else:
     print("done")
-printStuff()
-print("making submission")
-submission = pd.DataFrame(index=Test.index,columns=['seg_id','time_to_failure'])
-submission['seg_id'] = Test['seg_id'].values
-submission['time_to_failure'] = y_est
-submission.to_csv('submission.csv',index=False)
 
